@@ -64,6 +64,19 @@ h2 { margin: 0; font-size: 17px; }
 .unchecked-details summary { cursor: pointer; display: flex; justify-content: space-between; gap: 12px; font-size: 14px; font-weight: 800; }
 .chip-list { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
 .chip { padding: 7px 10px; border-radius: 999px; background: #f1f5f9; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 900; }
+.status-summary { font-size: 14px; white-space: nowrap; }
+.status-list { display: grid; gap: 12px; }
+.status-class { display: grid; gap: 7px; }
+.status-class-head { font-size: 13px; font-weight: 900; color: #475569; }
+.status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 7px; }
+.status-item { min-width: 0; border-radius: 14px; padding: 9px 10px; display: grid; grid-template-columns: auto 1fr; grid-template-areas: "icon code" "icon meta"; column-gap: 8px; align-items: center; border: 1px solid #cbd5e1; }
+.status-item.is-checked { background: #f0fdf4; border-color: #86efac; }
+.status-item.is-unchecked { background: #f8fafc; }
+.status-icon { grid-area: icon; width: 27px; height: 27px; border-radius: 999px; display: grid; place-items: center; font-weight: 1000; }
+.is-checked .status-icon { background: #16a34a; color: #fff; }
+.is-unchecked .status-icon { background: #e2e8f0; color: #64748b; }
+.status-code { grid-area: code; font-size: 16px; line-height: 1.1; }
+.status-meta { grid-area: meta; margin-top: 3px; color: #64748b; font-size: 10px; white-space: nowrap; }
 .checked-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
 .checked-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 13px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; }
 .checked-code { font-size: 18px; font-weight: 900; }
@@ -97,4 +110,5 @@ h2 { margin: 0; font-size: 17px; }
   .class-row { align-items: center; }
   .progress-main { align-items: flex-start; }
   .controls { grid-template-columns: 1fr 1fr; }
+  .status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
