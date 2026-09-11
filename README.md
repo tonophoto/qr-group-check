@@ -19,3 +19,5 @@
 ## 外部依存
 
 - `html5-qrcode`（CDN読み込み）
+
+Pages deployment trigger.
