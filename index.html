@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>QR班チェック</title>
+  <link rel="stylesheet" href="./style.css" />
+  <script src="https://unpkg.com/html5-qrcode" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">簡易Web版</p>
+        <h1>QR班チェック</h1>
+      </div>
+      <div id="sessionBadge" class="badge badge-idle">未開始</div>
+    </header>
+
+    <section class="card controls">
+      <button id="startBtn" class="btn btn-primary">今回のチェックを開始</button>
+      <button id="endBtn" class="btn btn-danger" disabled>終了</button>
+    </section>
+
+    <section class="card scanner-card">
+      <div class="section-head">
+        <h2>QR読み取り</h2>
+        <span id="scanHint" class="muted">開始するとカメラが起動します</span>
+      </div>
+      <div id="reader" class="reader"></div>
+      <div id="manualBox" class="manual-box">
+        <input id="manualInput" type="text" inputmode="text" autocomplete="off" placeholder="例: A-1" />
+        <button id="manualAddBtn" class="btn btn-secondary">手入力で確認</button>
+      </div>
+    </section>
+
+    <section class="card summary-card">
+      <div class="summary-number-wrap">
+        <span class="muted">チェック済み</span>
+        <strong id="countValue" class="summary-number">0</strong>
+        <span class="muted">班</span>
+      </div>
+      <button id="resetBtn" class="btn btn-ghost" disabled>今回の記録をリセット</button>
+    </section>
+
+    <section class="card list-card">
+      <div class="section-head">
+        <h2>チェック済み一覧</h2>
+        <span class="muted">新しい順</span>
+      </div>
+      <div id="emptyState" class="empty-state">まだチェックされていません</div>
+      <ul id="checkedList" class="checked-list"></ul>
+    </section>
+  </main>
+
+  <div id="resultOverlay" class="overlay" aria-hidden="true">
+    <div id="resultPanel" class="result-panel">
+      <div id="resultIcon" class="result-icon">✓</div>
+      <div id="resultLabel" class="result-label">A-1</div>
+      <div id="resultMessage" class="result-message">チェックできました！</div>
+    </div>
+  </div>
+</body>
+</html>
