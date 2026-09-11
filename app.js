@@ -2,6 +2,7 @@ const STORAGE_KEY = 'qr-group-check-state-v1';
 
 const els = {
   startBtn: document.getElementById('startBtn'),
+  cameraBtn: document.getElementById('cameraBtn'),
   endBtn: document.getElementById('endBtn'),
   resetBtn: document.getElementById('resetBtn'),
   manualInput: document.getElementById('manualInput'),
@@ -22,6 +23,7 @@ let state = loadState();
 let scanner = null;
 let overlayTimer = null;
 let scanLocked = false;
+let cameraPaused = false;
 
 function defaultState() {
   return { status: 'idle', startedAt: null, endedAt: null, checks: [] };
@@ -67,6 +69,8 @@ function formatTime(iso) {
 function render() {
   const active = state.status === 'active';
   els.startBtn.disabled = active;
+  els.cameraBtn.disabled = !active;
+  els.cameraBtn.textContent = cameraPaused ? 'カメラ再開' : 'カメラ停止';
   els.endBtn.disabled = !active;
   els.resetBtn.disabled = active || state.checks.length === 0;
   els.manualInput.disabled = !active;
@@ -77,7 +81,7 @@ function render() {
   if (state.status === 'active') {
     els.sessionBadge.classList.add('badge-active');
     els.sessionBadge.textContent = 'チェック中';
-    els.scanHint.textContent = 'QRをカメラにかざしてください';
+    els.scanHint.textContent = cameraPaused ? 'カメラ停止中' : 'QRをカメラにかざしてください';
   } else if (state.status === 'ended') {
     els.sessionBadge.classList.add('badge-ended');
     els.sessionBadge.textContent = '終了';
@@ -114,6 +118,8 @@ async function startScanner() {
       (decodedText) => handleCode(decodedText),
       () => {}
     );
+    cameraPaused = false;
+    render();
   } catch (error) {
     els.scanHint.textContent = 'カメラを起動できません。HTTPSまたは権限を確認してください';
     scanner = null;
@@ -150,7 +156,7 @@ function buzz(type) {
 }
 
 function handleCode(raw) {
-  if (state.status !== 'active' || scanLocked) return;
+  if (state.status !== 'active' || scanLocked || cameraPaused) return;
   const code = normalizeQr(raw);
   scanLocked = true;
 
@@ -178,14 +184,27 @@ function handleCode(raw) {
 
 els.startBtn.addEventListener('click', async () => {
   state = { status: 'active', startedAt: new Date().toISOString(), endedAt: null, checks: [] };
+  cameraPaused = false;
   saveState();
   render();
   await startScanner();
 });
 
+els.cameraBtn.addEventListener('click', async () => {
+  if (state.status !== 'active') return;
+  if (cameraPaused) {
+    await startScanner();
+    return;
+  }
+  await stopScanner();
+  cameraPaused = true;
+  render();
+});
+
 els.endBtn.addEventListener('click', async () => {
   state.status = 'ended';
   state.endedAt = new Date().toISOString();
+  cameraPaused = false;
   saveState();
   render();
   await stopScanner();
@@ -194,6 +213,7 @@ els.endBtn.addEventListener('click', async () => {
 els.resetBtn.addEventListener('click', () => {
   if (!confirm('今回のチェック記録をリセットしますか？')) return;
   state = defaultState();
+  cameraPaused = false;
   saveState();
   render();
 });
