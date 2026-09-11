@@ -5,59 +5,127 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#0f172a" />
   <title>QR班チェック</title>
-  <link rel="stylesheet" href="./style.css?v=20260911-2" />
+  <link rel="stylesheet" href="./style.css?v=20260911-3" />
   <script src="https://unpkg.com/html5-qrcode" defer></script>
-  <script src="./app.js?v=20260911-2" defer></script>
+  <script src="./app.js?v=20260911-3" defer></script>
 </head>
 <body>
   <main class="app-shell">
     <header class="topbar">
       <div>
-        <p class="eyebrow">簡易Web版</p>
+        <p class="eyebrow">簡易Web版 v2</p>
         <h1>QR班チェック</h1>
       </div>
       <div id="sessionBadge" class="badge badge-idle">未開始</div>
     </header>
 
-    <section class="card controls">
-      <button id="startBtn" class="btn btn-primary">今回のチェックを開始</button>
-      <button id="cameraBtn" class="btn btn-secondary" disabled>カメラ停止</button>
-      <button id="endBtn" class="btn btn-danger" disabled>終了</button>
+    <section id="setupCard" class="card">
+      <div class="section-head">
+        <div>
+          <h2>今回の設定</h2>
+          <p class="muted section-note">固定QR（A-1 / 1-1 など）をそのまま使います</p>
+        </div>
+      </div>
+
+      <div class="field-grid">
+        <label class="field">
+          <span>クラス表記</span>
+          <select id="classMode">
+            <option value="alpha">A組・B組…</option>
+            <option value="numeric">1組・2組…</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>ラウンド名</span>
+          <input id="roundTitle" type="text" maxlength="60" placeholder="例：国会議事堂 集合確認" />
+        </label>
+        <label class="field">
+          <span>場所・メモ</span>
+          <input id="roundNote" type="text" maxlength="80" placeholder="例：正面階段前" />
+        </label>
+      </div>
+
+      <div class="setup-toolbar">
+        <span class="setup-label">クラス数</span>
+        <div class="stepper">
+          <button id="classMinusBtn" class="btn btn-step" type="button">−</button>
+          <strong id="classCountValue">1</strong>
+          <button id="classPlusBtn" class="btn btn-step" type="button">＋</button>
+        </div>
+      </div>
+
+      <div id="classSetupList" class="class-setup-list"></div>
+      <button id="startBtn" class="btn btn-primary btn-wide">この設定でチェック開始</button>
     </section>
 
-    <section class="card scanner-card">
+    <section id="activeControls" class="card controls" hidden>
+      <button id="cameraBtn" class="btn btn-secondary">カメラ停止</button>
+      <button id="endBtn" class="btn btn-danger">今回のチェックを終了</button>
+    </section>
+
+    <section id="roundInfoCard" class="card round-info" hidden>
+      <div>
+        <span class="muted">ラウンド</span>
+        <strong id="activeRoundTitle">班チェック</strong>
+      </div>
+      <div id="activeRoundNoteWrap" hidden>
+        <span class="muted">場所・メモ</span>
+        <strong id="activeRoundNote"></strong>
+      </div>
+    </section>
+
+    <section id="scannerCard" class="card scanner-card" hidden>
       <div class="section-head">
         <h2>QR読み取り</h2>
-        <span id="scanHint" class="muted">開始するとカメラが起動します</span>
+        <span id="scanHint" class="muted">QRをカメラにかざしてください</span>
       </div>
       <div id="reader" class="reader"></div>
-      <div id="manualBox" class="manual-box">
-        <input id="manualInput" type="text" inputmode="text" autocomplete="off" placeholder="例: A-1" />
-        <button id="manualAddBtn" class="btn btn-secondary">手入力で確認</button>
+      <div id="cameraStopped" class="camera-stopped" hidden>
+        <strong>カメラ停止中</strong>
+        <span>チェック記録はそのまま残っています</span>
+      </div>
+      <div class="manual-box">
+        <input id="manualInput" type="text" inputmode="text" autocomplete="off" placeholder="QRが読めない時：A-1" />
+        <button id="manualAddBtn" class="btn btn-secondary">手入力</button>
       </div>
     </section>
 
-    <section class="card summary-card">
-      <div class="summary-number-wrap">
-        <span class="muted">チェック済み</span>
-        <strong id="countValue" class="summary-number">0</strong>
-        <span class="muted">班</span>
+    <section id="progressCard" class="card progress-card" hidden>
+      <div class="progress-main">
+        <div>
+          <span class="muted">進捗</span>
+          <div class="progress-count"><strong id="countValue">0</strong><span>/</span><strong id="totalValue">0</strong><span>班</span></div>
+        </div>
+        <div id="completeBadge" class="complete-badge" hidden>全班チェック完了</div>
       </div>
-      <button id="resetBtn" class="btn btn-ghost" disabled>今回の記録をリセット</button>
+      <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+      <details id="uncheckedDetails" class="unchecked-details">
+        <summary><span>未チェック</span><strong id="uncheckedCount">0班</strong></summary>
+        <div id="uncheckedList" class="chip-list"></div>
+      </details>
     </section>
 
-    <section class="card list-card">
+    <section id="recentCard" class="card list-card" hidden>
       <div class="section-head">
-        <h2>チェック済み一覧</h2>
+        <h2>直近5件</h2>
         <span class="muted">新しい順</span>
       </div>
       <div id="emptyState" class="empty-state">まだチェックされていません</div>
       <ul id="checkedList" class="checked-list"></ul>
     </section>
+
+    <section id="endedCard" class="card ended-card" hidden>
+      <h2>今回のチェックは終了しました</h2>
+      <p id="endedSummary" class="ended-summary"></p>
+      <div class="ended-actions">
+        <button id="newRoundBtn" class="btn btn-primary">次のチェックを始める</button>
+        <button id="resetBtn" class="btn btn-ghost">記録を消去</button>
+      </div>
+    </section>
   </main>
 
   <div id="resultOverlay" class="overlay" aria-hidden="true">
-    <div id="resultPanel" class="result-panel">
+    <div id="resultPanel" class="result-panel" role="status" aria-live="assertive">
       <div id="resultIcon" class="result-icon">✓</div>
       <div id="resultLabel" class="result-label">A-1</div>
       <div id="resultMessage" class="result-message">チェックできました！</div>
