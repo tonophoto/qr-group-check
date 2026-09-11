@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#0f172a" />
   <title>QR班チェック</title>
-  <link rel="stylesheet" href="./style.css?v=20260911-3" />
+  <link rel="stylesheet" href="./style.css?v=20260911-4" />
   <script src="https://unpkg.com/html5-qrcode" defer></script>
-  <script src="./app.js?v=20260911-3" defer></script>
+  <script src="./app.js?v=20260911-4" defer></script>
+  <script src="./status.js?v=20260911-4" defer></script>
 </head>
 <body>
   <main class="app-shell">
@@ -103,6 +104,17 @@
         <summary><span>未チェック</span><strong id="uncheckedCount">0班</strong></summary>
         <div id="uncheckedList" class="chip-list"></div>
       </details>
+    </section>
+
+    <section id="targetStatusCard" class="card status-card" hidden>
+      <div class="section-head">
+        <div>
+          <h2>対象班のチェック状況</h2>
+          <p class="muted section-note">今回の対象班を全部表示</p>
+        </div>
+        <strong id="targetStatusSummary" class="status-summary">0 / 0班</strong>
+      </div>
+      <div id="targetStatusList" class="status-list"></div>
     </section>
 
     <section id="recentCard" class="card list-card" hidden>
