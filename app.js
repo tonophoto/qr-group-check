@@ -126,11 +126,30 @@ async function startScanner() {
   }
 }
 
+function forceStopVideoTracks() {
+  document.querySelectorAll('#reader video').forEach((video) => {
+    const stream = video.srcObject;
+    if (stream && typeof stream.getTracks === 'function') {
+      stream.getTracks().forEach((track) => {
+        try { track.stop(); } catch {}
+      });
+    }
+    try { video.srcObject = null; } catch {}
+  });
+}
+
 async function stopScanner() {
-  if (!scanner) return;
-  try { await scanner.stop(); } catch {}
-  try { await scanner.clear(); } catch {}
+  const activeScanner = scanner;
   scanner = null;
+  forceStopVideoTracks();
+
+  if (activeScanner) {
+    try { await activeScanner.stop(); } catch {}
+    try { await activeScanner.clear(); } catch {}
+  }
+
+  forceStopVideoTracks();
+  els.reader.innerHTML = '';
 }
 
 function showResult(type, code, message) {
@@ -192,13 +211,17 @@ els.startBtn.addEventListener('click', async () => {
 
 els.cameraBtn.addEventListener('click', async () => {
   if (state.status !== 'active') return;
+
   if (cameraPaused) {
+    cameraPaused = false;
+    render();
     await startScanner();
     return;
   }
-  await stopScanner();
+
   cameraPaused = true;
   render();
+  await stopScanner();
 });
 
 els.endBtn.addEventListener('click', async () => {
