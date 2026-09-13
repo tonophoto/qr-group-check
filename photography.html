@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#0f172a" />
   <title>撮影チェック | QR班チェック</title>
-  <link rel="stylesheet" href="./photography.css?v=20260913-5" />
+  <link rel="stylesheet" href="./photography.css?v=20260913-6" />
   <script src="https://unpkg.com/html5-qrcode" defer></script>
   <script src="./photography.js?v=20260913-3" defer></script>
-  <script src="./photography-audio.js?v=20260913-2" defer></script>
+  <script src="./photography-audio.js?v=20260913-3" defer></script>
   <script src="./photography-summary.js?v=20260913-3" defer></script>
   <script src="./photography-manual.js?v=20260913-2" defer></script>
 </head>
@@ -75,7 +75,10 @@
           <h2>QR読み取り</h2>
           <span id="scannerOwner" class="muted"></span>
         </div>
-        <span id="scanHint" class="muted">QRをカメラにかざしてください</span>
+        <div class="scan-tools">
+          <span id="scanHint" class="muted">QRをカメラにかざしてください</span>
+          <button id="soundToggleBtn" class="btn btn-ghost btn-sound" type="button" aria-pressed="false">🔇 音を出さない</button>
+        </div>
       </div>
       <div id="reader" class="reader"></div>
       <div id="cameraStopped" class="camera-stopped" hidden>
