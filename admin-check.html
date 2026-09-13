@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja">
+<html lang="ja" class="auth-pending" data-auth-page="admin">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
@@ -8,14 +8,12 @@
   <link rel="stylesheet" href="./photography.css?v=20260913-7" />
   <link rel="stylesheet" href="./sound-check.css?v=20260913-1" />
   <link rel="stylesheet" href="./photography-effects.css?v=20260913-3" />
+  <link rel="stylesheet" href="./auth-gate.css?v=20260913-1" />
   <style>
     .admin-badge{display:inline-block;padding:4px 9px;border-radius:999px;background:#fee2e2;color:#991b1b;font-size:11px;font-weight:900;margin-bottom:6px}
     .effect-candidate-list{display:grid;gap:10px}.effect-candidate-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:12px;border:1px solid #e2e8f0;border-radius:14px;background:#f8fafc}.effect-candidate-info{display:grid;gap:3px}.effect-candidate-row .btn{min-width:92px}.effect-adopted{display:inline-block;width:max-content;padding:3px 8px;border-radius:999px;background:#dcfce7;color:#166534;font-size:11px;font-weight:900;margin-bottom:2px}.admin-section-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.admin-divider{height:1px;background:#e2e8f0;margin:8px 0 14px}@media(max-width:520px){.effect-candidate-row{grid-template-columns:1fr}.effect-candidate-row .btn{width:100%}}
   </style>
-  <script src="./photography-sounds.js?v=20260913-3" defer></script>
-  <script src="./photography-effects.js?v=20260913-7" defer></script>
-  <script src="./sound-check.js?v=20260913-1" defer></script>
-  <script src="./effect-check.js?v=20260913-4" defer></script>
+  <script type="module" src="./auth-gate.js?v=20260913-2"></script>
 </head>
 <body>
   <main class="app-shell sound-check-shell">
