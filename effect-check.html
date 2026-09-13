@@ -6,12 +6,12 @@
   <meta name="theme-color" content="#0f172a" />
   <title>撮影チェック エフェクト確認</title>
   <link rel="stylesheet" href="./photography.css?v=20260913-7" />
-  <link rel="stylesheet" href="./photography-effects.css?v=20260913-2" />
+  <link rel="stylesheet" href="./photography-effects.css?v=20260913-3" />
   <style>
-    .effect-candidate-list{display:grid;gap:10px}.effect-candidate-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:12px;border:1px solid #e2e8f0;border-radius:14px;background:#f8fafc}.effect-candidate-info{display:grid;gap:3px}.effect-candidate-row .btn{min-width:92px}@media(max-width:520px){.effect-candidate-row{grid-template-columns:1fr}.effect-candidate-row .btn{width:100%}}
+    .effect-candidate-list{display:grid;gap:10px}.effect-candidate-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:12px;border:1px solid #e2e8f0;border-radius:14px;background:#f8fafc}.effect-candidate-info{display:grid;gap:3px}.effect-candidate-row .btn{min-width:92px}.effect-adopted{display:inline-block;width:max-content;padding:3px 8px;border-radius:999px;background:#dcfce7;color:#166534;font-size:11px;font-weight:900;margin-bottom:2px}@media(max-width:520px){.effect-candidate-row{grid-template-columns:1fr}.effect-candidate-row .btn{width:100%}}
   </style>
-  <script src="./photography-effects.js?v=20260913-3" defer></script>
-  <script src="./effect-check.js?v=20260913-3" defer></script>
+  <script src="./photography-effects.js?v=20260913-4" defer></script>
+  <script src="./effect-check.js?v=20260913-4" defer></script>
 </head>
 <body>
   <main class="app-shell">
@@ -33,24 +33,40 @@
       <div class="section-head">
         <div>
           <h2>2回目以降の候補</h2>
-          <p class="muted">下の4種類を1個ずつ試せます。</p>
+          <p class="muted">スター爆発は長めに改修。さらに同じ路線の演出を追加しました。</p>
         </div>
       </div>
       <div class="effect-candidate-list">
         <div class="effect-candidate-row">
-          <div class="effect-candidate-info"><strong>スター爆発</strong><span class="muted">星が中央から一気に飛び出す</span></div>
+          <div class="effect-candidate-info"><span class="effect-adopted">採用候補</span><strong>スター爆発</strong><span class="muted">星が約2秒かけて大きく広がる</span></div>
           <button class="btn btn-secondary effect-preview-btn" type="button" data-effect="star-burst">▶ ためす</button>
         </div>
         <div class="effect-candidate-row">
-          <div class="effect-candidate-info"><strong>レインボーリング</strong><span class="muted">虹色の輪が3段で広がる</span></div>
+          <div class="effect-candidate-info"><strong>スターシャワー</strong><span class="muted">上から星が次々に降ってくる</span></div>
+          <button class="btn btn-secondary effect-preview-btn" type="button" data-effect="star-shower">▶ ためす</button>
+        </div>
+        <div class="effect-candidate-row">
+          <div class="effect-candidate-info"><strong>ダブルスター爆発</strong><span class="muted">時間差で2回、星が弾ける</span></div>
+          <button class="btn btn-secondary effect-preview-btn" type="button" data-effect="double-burst">▶ ためす</button>
+        </div>
+        <div class="effect-candidate-row">
+          <div class="effect-candidate-info"><strong>流星クロス</strong><span class="muted">四隅から流星が交差して走る</span></div>
+          <button class="btn btn-secondary effect-preview-btn" type="button" data-effect="comet-cross">▶ ためす</button>
+        </div>
+        <div class="effect-candidate-row">
+          <div class="effect-candidate-info"><strong>キラキラ雨</strong><span class="muted">細かな光が長めに降り続ける</span></div>
+          <button class="btn btn-secondary effect-preview-btn" type="button" data-effect="sparkle-rain">▶ ためす</button>
+        </div>
+        <div class="effect-candidate-row">
+          <div class="effect-candidate-info"><strong>レインボーリング</strong><span class="muted">虹色の輪がゆっくり3段で広がる</span></div>
           <button class="btn btn-secondary effect-preview-btn" type="button" data-effect="rainbow">▶ ためす</button>
         </div>
         <div class="effect-candidate-row">
-          <div class="effect-candidate-info"><strong>紙吹雪ポップ</strong><span class="muted">紙吹雪が画面いっぱいに弾ける</span></div>
+          <div class="effect-candidate-info"><strong>紙吹雪ポップ</strong><span class="muted">紙吹雪が少し長めに舞う</span></div>
           <button class="btn btn-secondary effect-preview-btn" type="button" data-effect="confetti">▶ ためす</button>
         </div>
         <div class="effect-candidate-row">
-          <div class="effect-candidate-info"><strong>パワーフラッシュ</strong><span class="muted">短い閃光と放射状の粒</span></div>
+          <div class="effect-candidate-info"><strong>パワーフラッシュ</strong><span class="muted">閃光と放射状の粒を長めに残す</span></div>
           <button class="btn btn-secondary effect-preview-btn" type="button" data-effect="flash">▶ ためす</button>
         </div>
       </div>
