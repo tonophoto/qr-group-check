@@ -15,10 +15,17 @@ function renderPhotoSoundButton() {
   photoSoundToggleBtn.classList.toggle('is-muted', !photoSoundEnabled);
 }
 
-async function photoSuccessSound() {
+function encounterStage(count) {
+  return ((Math.max(1, count) - 1) % 3) + 1;
+}
+
+async function photoSuccessSound(count) {
   if (!photoSoundEnabled) return;
   try {
-    await window.PhotoSounds?.playRandomSuccess?.();
+    const stage = encounterStage(count);
+    // 1回目系はリッチなパワーアップC、2回目系はスター、3回目系はレベルアップ。
+    const soundId = stage === 1 ? 'powerup-c' : stage === 2 ? 'star' : 'levelup';
+    await window.PhotoSounds?.playSuccess?.(soundId);
   } catch {}
 }
 
@@ -55,7 +62,9 @@ if (typeof record === 'function') {
     const result = originalRecord(raw, source);
 
     if (state.events.length > beforeCount) {
-      photoSuccessSound();
+      const added = state.events[state.events.length - 1];
+      const groupCount = state.events.filter((e) => e.groupCode === added.groupCode).length;
+      photoSuccessSound(groupCount);
     } else if (state.status === 'active' && !wasLocked && isInvalid) {
       // 読み取り直後のscanLocked中に同じQRが再検出されてもエラー音を鳴らさない。
       photoErrorSound();
