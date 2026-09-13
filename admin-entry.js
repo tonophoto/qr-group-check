@@ -11,7 +11,10 @@
 
     if (taps >= 10) {
       taps = 0;
-      window.location.href = './admin-check.html';
+      if (window.QRAccess?.role !== 'admin') return;
+      const url = new URL('./admin-check.html', window.location.href);
+      if (window.QRAccess?.tripId) url.searchParams.set('trip', window.QRAccess.tripId);
+      window.location.href = url.toString();
       return;
     }
 
