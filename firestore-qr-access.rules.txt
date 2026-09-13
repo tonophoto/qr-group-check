@@ -1,0 +1,49 @@
+// QR班チェック / 撮影チェック用 Firestore Rules 追記案
+// 既存の school-trip-chat の firestore.rules を置き換えず、
+// service cloud.firestore > match /databases/{database}/documents の内側へ追記する。
+
+function qrMemberPath(tripId) {
+  return /databases/$(database)/documents/qrTrips/$(tripId)/members/$(request.auth.uid);
+}
+
+function hasQrMembership(tripId) {
+  return request.auth != null
+    && exists(qrMemberPath(tripId))
+    && get(qrMemberPath(tripId)).data.disabled != true
+    && get(qrMemberPath(tripId)).data.role in ['teacher', 'photographer', 'admin'];
+}
+
+function qrRole(tripId) {
+  return hasQrMembership(tripId) ? get(qrMemberPath(tripId)).data.role : '';
+}
+
+match /qrTrips/{tripId} {
+  // 旅行本体は参加者のみ閲覧可能。クライアントからの作成・更新は禁止。
+  allow read: if hasQrMembership(tripId);
+  allow write: if false;
+
+  match /members/{memberUid} {
+    // 自分自身の参加者レコードだけ読める。
+    allow read: if request.auth != null && request.auth.uid == memberUid;
+    // 参加者登録はFirebase Consoleまたは管理バックエンドから行う。
+    allow write: if false;
+  }
+
+  match /groupRounds/{roundId} {
+    allow read: if hasQrMembership(tripId) && qrRole(tripId) in ['teacher', 'admin'];
+    allow write: if hasQrMembership(tripId) && qrRole(tripId) in ['teacher', 'admin'];
+
+    match /checks/{groupCode} {
+      allow read: if hasQrMembership(tripId) && qrRole(tripId) in ['teacher', 'admin'];
+      allow write: if hasQrMembership(tripId) && qrRole(tripId) in ['teacher', 'admin'];
+    }
+  }
+
+  match /photoChecks/{eventId} {
+    allow read: if hasQrMembership(tripId) && qrRole(tripId) in ['photographer', 'admin'];
+    allow create: if hasQrMembership(tripId)
+      && qrRole(tripId) in ['photographer', 'admin']
+      && request.resource.data.photographerId == request.auth.uid;
+    allow update, delete: if false;
+  }
+}
