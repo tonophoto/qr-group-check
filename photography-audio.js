@@ -1,4 +1,7 @@
 let photoAudioContext = null;
+let photoSoundEnabled = true;
+
+const photoSoundToggleBtn = document.getElementById('soundToggleBtn');
 
 function getPhotoAudioContext() {
   if (photoAudioContext) return photoAudioContext;
@@ -15,7 +18,15 @@ async function unlockPhotoAudio() {
   } catch {}
 }
 
+function renderPhotoSoundButton() {
+  if (!photoSoundToggleBtn) return;
+  photoSoundToggleBtn.setAttribute('aria-pressed', String(!photoSoundEnabled));
+  photoSoundToggleBtn.textContent = photoSoundEnabled ? '🔇 音を出さない' : '🔊 音を出す';
+  photoSoundToggleBtn.classList.toggle('is-muted', !photoSoundEnabled);
+}
+
 function photoTone({ frequency, type, duration, gain, delay = 0 }) {
+  if (!photoSoundEnabled) return;
   try {
     const ctx = getPhotoAudioContext();
     if (!ctx) return;
@@ -45,6 +56,14 @@ function photoErrorSound() {
   photoTone({ frequency: 240, type: 'square', duration: 0.35, gain: 0.45, delay: 0.43 });
 }
 
+if (photoSoundToggleBtn) {
+  photoSoundToggleBtn.addEventListener('click', async () => {
+    photoSoundEnabled = !photoSoundEnabled;
+    if (photoSoundEnabled) await unlockPhotoAudio();
+    renderPhotoSoundButton();
+  });
+}
+
 ['pointerdown', 'touchstart', 'click'].forEach((eventName) => {
   document.addEventListener(eventName, unlockPhotoAudio, { once: true, passive: true });
 });
@@ -52,7 +71,7 @@ function photoErrorSound() {
 if (typeof record === 'function') {
   const originalRecord = record;
   record = function recordWithAudio(raw, source) {
-    unlockPhotoAudio();
+    if (photoSoundEnabled) unlockPhotoAudio();
 
     const beforeCount = state.events.length;
     const code = norm(raw);
@@ -72,3 +91,5 @@ if (typeof record === 'function') {
     return result;
   };
 }
+
+renderPhotoSoundButton();
