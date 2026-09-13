@@ -10,8 +10,8 @@
   <style>
     .effect-candidate-list{display:grid;gap:10px}.effect-candidate-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:12px;border:1px solid #e2e8f0;border-radius:14px;background:#f8fafc}.effect-candidate-info{display:grid;gap:3px}.effect-candidate-row .btn{min-width:92px}@media(max-width:520px){.effect-candidate-row{grid-template-columns:1fr}.effect-candidate-row .btn{width:100%}}
   </style>
-  <script src="./photography-effects.js?v=20260913-2" defer></script>
-  <script src="./effect-check.js?v=20260913-2" defer></script>
+  <script src="./photography-effects.js?v=20260913-3" defer></script>
+  <script src="./effect-check.js?v=20260913-3" defer></script>
 </head>
 <body>
   <main class="app-shell">
@@ -33,15 +33,32 @@
       <div class="section-head">
         <div>
           <h2>2回目以降の候補</h2>
-          <p class="muted">音と同じように、1個ずつ試して採用する演出を選びます。</p>
+          <p class="muted">下の4種類を1個ずつ試せます。</p>
         </div>
       </div>
-      <div id="effectCandidateList" class="effect-candidate-list"></div>
+      <div class="effect-candidate-list">
+        <div class="effect-candidate-row">
+          <div class="effect-candidate-info"><strong>スター爆発</strong><span class="muted">星が中央から一気に飛び出す</span></div>
+          <button class="btn btn-secondary effect-preview-btn" type="button" data-effect="star-burst">▶ ためす</button>
+        </div>
+        <div class="effect-candidate-row">
+          <div class="effect-candidate-info"><strong>レインボーリング</strong><span class="muted">虹色の輪が3段で広がる</span></div>
+          <button class="btn btn-secondary effect-preview-btn" type="button" data-effect="rainbow">▶ ためす</button>
+        </div>
+        <div class="effect-candidate-row">
+          <div class="effect-candidate-info"><strong>紙吹雪ポップ</strong><span class="muted">紙吹雪が画面いっぱいに弾ける</span></div>
+          <button class="btn btn-secondary effect-preview-btn" type="button" data-effect="confetti">▶ ためす</button>
+        </div>
+        <div class="effect-candidate-row">
+          <div class="effect-candidate-info"><strong>パワーフラッシュ</strong><span class="muted">短い閃光と放射状の粒</span></div>
+          <button class="btn btn-secondary effect-preview-btn" type="button" data-effect="flash">▶ ためす</button>
+        </div>
+      </div>
     </section>
 
     <section class="card notice-card">
-      <strong>候補</strong>
-      <p>スター爆発 / レインボーリング / 紙吹雪ポップ / パワーフラッシュ。ここでは確認だけで、撮影チェック本体の2回目以降にはまだ反映していません。</p>
+      <strong>確認専用</strong>
+      <p>ここでは候補を試すだけで、撮影チェック本体の2回目以降にはまだ反映していません。</p>
     </section>
   </main>
 
