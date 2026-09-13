@@ -1,5 +1,4 @@
 const previewBtn = document.getElementById('previewStartBtn');
-const candidateList = document.getElementById('effectCandidateList');
 const overlay = document.getElementById('resultOverlay');
 const panel = document.getElementById('resultPanel');
 const label = document.getElementById('resultLabel');
@@ -38,35 +37,7 @@ function previewCandidate(id) {
   closePreview(1650);
 }
 
-function renderCandidates() {
-  if (!candidateList) return;
-  candidateList.innerHTML = '';
-  const candidates = window.PhotoEffects?.getCandidates?.() || [];
-  candidates.forEach((effect) => {
-    const row = document.createElement('div');
-    row.className = 'effect-candidate-row';
-
-    const info = document.createElement('div');
-    info.className = 'effect-candidate-info';
-
-    const name = document.createElement('strong');
-    name.textContent = effect.name;
-
-    const description = document.createElement('span');
-    description.className = 'muted';
-    description.textContent = effect.description;
-
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'btn btn-secondary';
-    button.textContent = '▶ ためす';
-    button.addEventListener('click', () => previewCandidate(effect.id));
-
-    info.append(name, description);
-    row.append(info, button);
-    candidateList.appendChild(row);
-  });
-}
-
-previewBtn.addEventListener('click', previewStartEffect);
-renderCandidates();
+previewBtn?.addEventListener('click', previewStartEffect);
+document.querySelectorAll('.effect-preview-btn').forEach((button) => {
+  button.addEventListener('click', () => previewCandidate(button.dataset.effect));
+});
