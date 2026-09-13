@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>管理者チェックツール | 撮影チェック</title>
+  <link rel="stylesheet" href="./photography.css?v=20260913-7" />
+  <link rel="stylesheet" href="./sound-check.css?v=20260913-1" />
+  <link rel="stylesheet" href="./photography-effects.css?v=20260913-3" />
+  <style>
+    .admin-badge{display:inline-block;padding:4px 9px;border-radius:999px;background:#fee2e2;color:#991b1b;font-size:11px;font-weight:900;margin-bottom:6px}
+    .effect-candidate-list{display:grid;gap:10px}.effect-candidate-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:12px;border:1px solid #e2e8f0;border-radius:14px;background:#f8fafc}.effect-candidate-info{display:grid;gap:3px}.effect-candidate-row .btn{min-width:92px}.effect-adopted{display:inline-block;width:max-content;padding:3px 8px;border-radius:999px;background:#dcfce7;color:#166534;font-size:11px;font-weight:900;margin-bottom:2px}.admin-section-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.admin-divider{height:1px;background:#e2e8f0;margin:8px 0 14px}@media(max-width:520px){.effect-candidate-row{grid-template-columns:1fr}.effect-candidate-row .btn{width:100%}}
+  </style>
+  <script src="./photography-sounds.js?v=20260913-3" defer></script>
+  <script src="./photography-effects.js?v=20260913-7" defer></script>
+  <script src="./sound-check.js?v=20260913-1" defer></script>
+  <script src="./effect-check.js?v=20260913-4" defer></script>
+</head>
+<body>
+  <main class="app-shell sound-check-shell">
+    <header class="topbar">
+      <div>
+        <span class="admin-badge">管理者用</span>
+        <p class="eyebrow">撮影チェック 内部ツール</p>
+        <h1>音・エフェクト確認</h1>
+      </div>
+      <a class="nav-link" href="./photography.html">撮影チェックへ</a>
+    </header>
+
+    <section class="card">
+      <div class="admin-section-title">
+        <div>
+          <h2>音チェック</h2>
+          <p class="muted">採用済みの成功音を確認します。</p>
+        </div>
+      </div>
+      <button id="randomSoundBtn" class="btn btn-primary btn-wide" type="button">🎲 ランダムで鳴らす</button>
+      <p id="lastSound" class="sound-last muted">まだ鳴らしていません</p>
+      <div class="admin-divider"></div>
+      <div id="soundList" class="sound-list"></div>
+    </section>
+
+    <section class="card">
+      <div class="admin-section-title">
+        <div>
+          <h2>読み取りエフェクト</h2>
+          <p class="muted">撮影チェックで使う演出を確認します。</p>
+        </div>
+      </div>
+      <div class="effect-candidate-list">
+        <div class="effect-candidate-row">
+          <div class="effect-candidate-info"><span class="effect-adopted">1回目系</span><strong>START</strong><span class="muted">START表示＋既存成功画面</span></div>
+          <button id="previewStartBtn" class="btn btn-secondary" type="button">▶ ためす</button>
+        </div>
+        <div class="effect-candidate-row">
+          <div class="effect-candidate-info"><span class="effect-adopted">2回目系</span><strong>スター爆発</strong><span class="muted">星が大きく広がる</span></div>
+          <button class="btn btn-secondary effect-preview-btn" type="button" data-effect="star-burst">▶ ためす</button>
+        </div>
+        <div class="effect-candidate-row">
+          <div class="effect-candidate-info"><span class="effect-adopted">3回目系</span><strong>ダブルスター爆発</strong><span class="muted">時間差で2回、星が弾ける</span></div>
+          <button class="btn btn-secondary effect-preview-btn" type="button" data-effect="double-burst">▶ ためす</button>
+        </div>
+        <div class="effect-candidate-row">
+          <div class="effect-candidate-info"><strong>スターシャワー</strong><span class="muted">上から星が次々に降る</span></div>
+          <button class="btn btn-secondary effect-preview-btn" type="button" data-effect="star-shower">▶ ためす</button>
+        </div>
+        <div class="effect-candidate-row">
+          <div class="effect-candidate-info"><strong>流星クロス</strong><span class="muted">四隅から流星が交差する</span></div>
+          <button class="btn btn-secondary effect-preview-btn" type="button" data-effect="comet-cross">▶ ためす</button>
+        </div>
+        <div class="effect-candidate-row">
+          <div class="effect-candidate-info"><strong>キラキラ雨</strong><span class="muted">細かな光が降り続ける</span></div>
+          <button class="btn btn-secondary effect-preview-btn" type="button" data-effect="sparkle-rain">▶ ためす</button>
+        </div>
+        <div class="effect-candidate-row">
+          <div class="effect-candidate-info"><strong>レインボーリング</strong><span class="muted">虹色の輪が広がる</span></div>
+          <button class="btn btn-secondary effect-preview-btn" type="button" data-effect="rainbow">▶ ためす</button>
+        </div>
+        <div class="effect-candidate-row">
+          <div class="effect-candidate-info"><strong>紙吹雪ポップ</strong><span class="muted">紙吹雪が画面に舞う</span></div>
+          <button class="btn btn-secondary effect-preview-btn" type="button" data-effect="confetti">▶ ためす</button>
+        </div>
+        <div class="effect-candidate-row">
+          <div class="effect-candidate-info"><strong>パワーフラッシュ</strong><span class="muted">閃光と放射状の粒</span></div>
+          <button class="btn btn-secondary effect-preview-btn" type="button" data-effect="flash">▶ ためす</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card notice-card">
+      <strong>管理者確認用</strong>
+      <p>通常画面にはこのページへのリンクを表示しません。</p>
+    </section>
+  </main>
+
+  <div id="resultOverlay" class="overlay" aria-hidden="true">
+    <div id="resultPanel" class="result-panel success" role="status" aria-live="assertive">
+      <div class="result-icon">✓</div>
+      <div id="resultLabel" class="result-label">A-1</div>
+      <div id="resultMessage" class="result-message">撮影チェック 1回目</div>
+      <div id="resultMeta" class="result-meta">田中・10:24</div>
+    </div>
+  </div>
+</body>
+</html>
