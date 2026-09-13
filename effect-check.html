@@ -6,9 +6,12 @@
   <meta name="theme-color" content="#0f172a" />
   <title>撮影チェック エフェクト確認</title>
   <link rel="stylesheet" href="./photography.css?v=20260913-7" />
-  <link rel="stylesheet" href="./photography-effects.css?v=20260913-1" />
-  <script src="./photography-effects.js?v=20260913-1" defer></script>
-  <script src="./effect-check.js?v=20260913-1" defer></script>
+  <link rel="stylesheet" href="./photography-effects.css?v=20260913-2" />
+  <style>
+    .effect-candidate-list{display:grid;gap:10px}.effect-candidate-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:12px;border:1px solid #e2e8f0;border-radius:14px;background:#f8fafc}.effect-candidate-info{display:grid;gap:3px}.effect-candidate-row .btn{min-width:92px}@media(max-width:520px){.effect-candidate-row{grid-template-columns:1fr}.effect-candidate-row .btn{width:100%}}
+  </style>
+  <script src="./photography-effects.js?v=20260913-2" defer></script>
+  <script src="./effect-check.js?v=20260913-2" defer></script>
 </head>
 <body>
   <main class="app-shell">
@@ -26,9 +29,19 @@
       <button id="previewStartBtn" class="btn btn-primary btn-wide" type="button">▶ 1回目の演出を確認</button>
     </section>
 
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <h2>2回目以降の候補</h2>
+          <p class="muted">音と同じように、1個ずつ試して採用する演出を選びます。</p>
+        </div>
+      </div>
+      <div id="effectCandidateList" class="effect-candidate-list"></div>
+    </section>
+
     <section class="card notice-card">
-      <strong>現在の方針</strong>
-      <p>1回目はSTART＋既存チェック画面。2回目以降のランダム演出は、このページで候補を増やして選別していきます。</p>
+      <strong>候補</strong>
+      <p>スター爆発 / レインボーリング / 紙吹雪ポップ / パワーフラッシュ。ここでは確認だけで、撮影チェック本体の2回目以降にはまだ反映していません。</p>
     </section>
   </main>
 
