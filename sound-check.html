@@ -2,45 +2,10 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#0f172a" />
-  <title>撮影チェック 音確認</title>
-  <link rel="stylesheet" href="./photography.css?v=20260913-7" />
-  <link rel="stylesheet" href="./sound-check.css?v=20260913-1" />
-  <script src="./photography-sounds.js?v=20260913-3" defer></script>
-  <script src="./sound-check.js?v=20260913-1" defer></script>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta http-equiv="refresh" content="0; url=./admin-check.html" />
+  <title>管理者チェックツールへ移動</title>
+  <script>location.replace('./admin-check.html');</script>
 </head>
-<body>
-  <main class="app-shell sound-check-shell">
-    <header class="topbar">
-      <div>
-        <p class="eyebrow">カメラマン用</p>
-        <h1>楽しい音をためす</h1>
-      </div>
-      <a class="nav-link" href="./photography.html">撮影チェックへ</a>
-    </header>
-
-    <section class="card">
-      <h2>ランダム成功音</h2>
-      <p class="muted">実際の撮影チェックでは、採用済みの音からランダムで1つ鳴ります。連続で同じ音になりにくい設定です。</p>
-      <button id="randomSoundBtn" class="btn btn-primary btn-wide" type="button">🎲 ランダムで鳴らす</button>
-      <p id="lastSound" class="sound-last muted">まだ鳴らしていません</p>
-    </section>
-
-    <section class="card">
-      <div class="section-head">
-        <div>
-          <h2>1個ずつ確認</h2>
-          <p class="muted">スター・レベルアップに加え、リッチで長めのパワーアップ音を3パターン採用しています。</p>
-        </div>
-      </div>
-      <div id="soundList" class="sound-list"></div>
-    </section>
-
-    <section class="card notice-card">
-      <strong>音量注意</strong>
-      <p>このページは音確認専用です。静かな場所では端末音量を下げてから試してください。</p>
-    </section>
-  </main>
-</body>
+<body></body>
 </html>
