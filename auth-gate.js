@@ -23,8 +23,54 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: 'select_account' });
+let protectedAppLoaded = false;
+
+const pageScripts = {
+  group: [
+    'https://unpkg.com/html5-qrcode',
+    './app.js?v=20260913-4',
+    './group-audio-fix.js?v=20260913-1',
+    './photography-effects.js?v=20260913-6',
+    './group-effects.js?v=20260913-1',
+    './status.js?v=20260913-4',
+  ],
+  photography: [
+    'https://unpkg.com/html5-qrcode',
+    './photography.js?v=20260913-3',
+    './photography-sounds.js?v=20260913-3',
+    './photography-audio.js?v=20260913-5',
+    './photography-effects.js?v=20260913-5',
+    './photography-summary.js?v=20260913-3',
+    './photography-manual.js?v=20260913-2',
+    './admin-entry.js?v=20260913-1',
+  ],
+  admin: [
+    './photography-sounds.js?v=20260913-3',
+    './photography-effects.js?v=20260913-7',
+    './sound-check.js?v=20260913-1',
+    './effect-check.js?v=20260913-4',
+  ],
+};
 
 try { await setPersistence(auth, browserLocalPersistence); } catch {}
+
+function appendScript(src) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = src;
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
+
+async function loadProtectedApp() {
+  if (protectedAppLoaded) return;
+  protectedAppLoaded = true;
+  const page = document.documentElement.dataset.authPage || 'group';
+  const scripts = pageScripts[page] || pageScripts.group;
+  for (const src of scripts) await appendScript(src);
+}
 
 function showLogin(message = '') {
   document.querySelector('.auth-gate')?.remove();
@@ -71,17 +117,23 @@ function showUserBar(user) {
   bar.querySelector('span').textContent = name;
   bar.querySelector('button').addEventListener('click', async () => {
     await signOut(auth);
+    location.reload();
   });
   document.body.appendChild(bar);
 }
 
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   document.querySelector('.auth-gate')?.remove();
   document.querySelector('.auth-user-bar')?.remove();
   if (!user) {
     showLogin();
     return;
   }
-  document.documentElement.classList.remove('auth-pending');
-  showUserBar(user);
+  try {
+    await loadProtectedApp();
+    document.documentElement.classList.remove('auth-pending');
+    showUserBar(user);
+  } catch {
+    showLogin('アプリの読み込みに失敗しました。再読み込みしてください。');
+  }
 });
