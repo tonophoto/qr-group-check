@@ -63,66 +63,41 @@
       },
     },
     {
-      id: 'powerup',
-      name: 'パワーアップ',
-      description: '勢いよく駆け上がる5音',
+      id: 'powerup-a',
+      name: 'パワーアップ A',
+      description: '駆け上がって最後にキラッと決まる長めの王道型',
       play() {
-        [440, 554, 659, 831, 1109].forEach((frequency, index) => {
-          tone({ frequency, type: 'square', duration: index === 4 ? 0.20 : 0.075, gain: 0.17, delay: index * 0.055 });
+        [392, 494, 587, 698, 831, 988].forEach((frequency, index) => {
+          tone({ frequency, type: index < 3 ? 'square' : 'triangle', duration: 0.10, gain: 0.17, delay: index * 0.075 });
         });
+        tone({ frequency: 1319, type: 'sine', duration: 0.30, gain: 0.28, delay: 0.45 });
+        tone({ frequency: 1976, type: 'sine', duration: 0.16, gain: 0.16, delay: 0.57 });
       },
     },
     {
-      id: 'bonus',
-      name: 'ボーナス',
-      description: '明るい高音が3段で上がる',
+      id: 'powerup-b',
+      name: 'パワーアップ B',
+      description: '低音から一気に上昇して二段階で決まる派手めタイプ',
       play() {
-        tone({ frequency: 659, type: 'triangle', duration: 0.10, gain: 0.25 });
-        tone({ frequency: 988, type: 'triangle', duration: 0.11, gain: 0.27, delay: 0.08 });
-        tone({ frequency: 1319, type: 'sine', duration: 0.24, gain: 0.30, delay: 0.16 });
-      },
-    },
-    {
-      id: 'comet',
-      name: '流れ星',
-      description: 'きらきら音が一気に上昇',
-      play() {
-        [880, 1047, 1319, 1568, 1976].forEach((frequency, index) => {
-          tone({ frequency, type: 'sine', duration: 0.11, gain: 0.20, delay: index * 0.045 });
+        [330, 392, 494, 587, 698, 880].forEach((frequency, index) => {
+          tone({ frequency, type: 'square', duration: 0.085, gain: 0.16, delay: index * 0.065 });
         });
+        tone({ frequency: 1047, type: 'triangle', duration: 0.18, gain: 0.25, delay: 0.39 });
+        tone({ frequency: 1319, type: 'triangle', duration: 0.18, gain: 0.25, delay: 0.51 });
+        tone({ frequency: 1760, type: 'sine', duration: 0.28, gain: 0.22, delay: 0.63 });
       },
     },
     {
-      id: 'rainbow',
-      name: 'レインボー',
-      description: 'やわらかい上昇音＋きらめき',
+      id: 'powerup-c',
+      name: 'パワーアップ C',
+      description: '上昇アルペジオにキラキラを重ねたリッチタイプ',
       play() {
-        tone({ frequency: 523, type: 'triangle', duration: 0.11, gain: 0.22 });
-        tone({ frequency: 659, type: 'triangle', duration: 0.11, gain: 0.22, delay: 0.075 });
-        tone({ frequency: 784, type: 'triangle', duration: 0.11, gain: 0.22, delay: 0.15 });
-        tone({ frequency: 1047, type: 'sine', duration: 0.22, gain: 0.27, delay: 0.225 });
-        tone({ frequency: 1568, type: 'sine', duration: 0.13, gain: 0.14, delay: 0.30 });
-      },
-    },
-    {
-      id: 'jackpot',
-      name: 'ジャックポット',
-      description: '当たり感のある軽快な連続音',
-      play() {
-        tone({ frequency: 784, type: 'square', duration: 0.075, gain: 0.16 });
-        tone({ frequency: 988, type: 'square', duration: 0.075, gain: 0.16, delay: 0.065 });
-        tone({ frequency: 1175, type: 'square', duration: 0.075, gain: 0.16, delay: 0.13 });
-        tone({ frequency: 1568, type: 'triangle', duration: 0.22, gain: 0.28, delay: 0.195 });
-      },
-    },
-    {
-      id: 'rocket',
-      name: 'ロケット',
-      description: '低めから一気に飛び出す上昇音',
-      play() {
-        [392, 494, 622, 784, 1245].forEach((frequency, index) => {
-          tone({ frequency, type: index < 3 ? 'square' : 'triangle', duration: index === 4 ? 0.21 : 0.08, gain: 0.18, delay: index * 0.06 });
+        [523, 659, 784, 988, 1175, 1397].forEach((frequency, index) => {
+          tone({ frequency, type: 'triangle', duration: 0.11, gain: 0.20, delay: index * 0.085 });
         });
+        tone({ frequency: 1568, type: 'sine', duration: 0.18, gain: 0.18, delay: 0.34 });
+        tone({ frequency: 2093, type: 'sine', duration: 0.16, gain: 0.14, delay: 0.49 });
+        tone({ frequency: 1319, type: 'triangle', duration: 0.32, gain: 0.24, delay: 0.58 });
       },
     },
   ];
