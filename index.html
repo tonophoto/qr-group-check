@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#0f172a" />
   <title>QR班チェック</title>
-  <link rel="stylesheet" href="./style.css?v=20260911-4" />
+  <link rel="stylesheet" href="./style.css?v=20260913-1" />
   <script src="https://unpkg.com/html5-qrcode" defer></script>
-  <script src="./app.js?v=20260911-4" defer></script>
-  <script src="./status.js?v=20260911-4" defer></script>
+  <script src="./app.js?v=20260913-1" defer></script>
+  <script src="./status.js?v=20260913-1" defer></script>
 </head>
 <body>
   <main class="app-shell">
@@ -130,6 +130,7 @@
       <h2>今回のチェックは終了しました</h2>
       <p id="endedSummary" class="ended-summary"></p>
       <div class="ended-actions">
+        <button id="resumeBtn" class="btn btn-secondary" onclick="(()=>{try{const k='qr-group-check-state-v2';const s=JSON.parse(localStorage.getItem(k)||'null');if(!s||s.status!=='ended')return;s.status='active';s.endedAt=null;localStorage.setItem(k,JSON.stringify(s));location.reload();}catch(e){alert('再開できませんでした');}})()">終了したチェックを再開</button>
         <button id="newRoundBtn" class="btn btn-primary">次のチェックを始める</button>
         <button id="resetBtn" class="btn btn-ghost">記録を消去</button>
       </div>
