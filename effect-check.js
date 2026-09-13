@@ -34,7 +34,8 @@ function previewStartEffect() {
 function previewCandidate(id) {
   showBase(2);
   window.PhotoEffects?.playCandidate?.(id, overlay);
-  closePreview(1650);
+  const duration = window.PhotoEffects?.getCandidateDuration?.(id) || 2400;
+  closePreview(duration);
 }
 
 previewBtn?.addEventListener('click', previewStartEffect);
