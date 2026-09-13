@@ -6,8 +6,11 @@
   <meta name="theme-color" content="#0f172a" />
   <title>QR班チェック</title>
   <link rel="stylesheet" href="./style.css?v=20260913-4" />
+  <link rel="stylesheet" href="./photography-effects.css?v=20260913-3" />
   <script src="https://unpkg.com/html5-qrcode" defer></script>
   <script src="./app.js?v=20260913-4" defer></script>
+  <script src="./photography-effects.js?v=20260913-6" defer></script>
+  <script src="./group-effects.js?v=20260913-1" defer></script>
   <script src="./status.js?v=20260913-4" defer></script>
 </head>
 <body>
@@ -49,6 +52,19 @@
           <span>場所・メモ</span>
           <input id="roundNote" type="text" maxlength="80" placeholder="例：正面階段前" />
         </label>
+        <label class="field">
+          <span>読み取り成功時の演出</span>
+          <select id="groupEffectSelect">
+            <option value="standard">標準チェック</option>
+            <option value="start">START</option>
+            <option value="star-burst">スター爆発</option>
+            <option value="double-burst">ダブルスター爆発</option>
+          </select>
+        </label>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;margin-top:8px">
+        <a href="./effect-check.html" class="btn btn-ghost" style="text-decoration:none;text-align:center;padding:9px 12px">✨ 演出をためす</a>
       </div>
 
       <div class="setup-toolbar">
@@ -92,8 +108,22 @@
 
     <section id="scannerCard" class="card scanner-card" hidden>
       <div class="section-head">
-        <h2>QR読み取り</h2>
-        <span id="scanHint" class="muted">QRをカメラにかざしてください</span>
+        <div>
+          <h2>QR読み取り</h2>
+          <span id="scanHint" class="muted">QRをカメラにかざしてください</span>
+        </div>
+        <div style="display:grid;gap:6px;min-width:180px">
+          <label class="field" style="gap:3px">
+            <span>成功演出</span>
+            <select id="activeGroupEffectSelect">
+              <option value="standard">標準チェック</option>
+              <option value="start">START</option>
+              <option value="star-burst">スター爆発</option>
+              <option value="double-burst">ダブルスター爆発</option>
+            </select>
+          </label>
+          <a href="./effect-check.html" class="btn btn-ghost" style="text-decoration:none;text-align:center;padding:8px 10px;font-size:12px">✨ 演出をためす</a>
+        </div>
       </div>
       <div id="reader" class="reader"></div>
       <div id="cameraStopped" class="camera-stopped" hidden>
