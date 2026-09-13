@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>撮影チェック | QR班チェック</title>
+  <link rel="stylesheet" href="./photography.css?v=20260913-1" />
+  <script src="https://unpkg.com/html5-qrcode" defer></script>
+  <script src="./photography.js?v=20260913-1" defer></script>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">カメラマン用</p>
+        <h1>撮影チェック</h1>
+      </div>
+      <a class="nav-link" href="./index.html">班チェックへ</a>
+    </header>
+
+    <section class="card notice-card">
+      <strong>Firestore未接続・端末内保存</strong>
+      <p>いまはこの端末だけに記録します。将来は複数カメラマン間で同じ撮影履歴を共有する前提のデータ構造です。</p>
+    </section>
+
+    <section id="setupCard" class="card">
+      <h2>撮影者</h2>
+      <p class="muted">誰が何時何分にその班を撮影したかを記録します。</p>
+      <label class="field">
+        <span>カメラマン名</span>
+        <input id="photographerName" type="text" maxlength="40" placeholder="例：田中" autocomplete="name" />
+      </label>
+      <div class="target-summary">
+        <span>対象班</span>
+        <strong id="targetCount">0班</strong>
+      </div>
+      <p id="targetHint" class="muted"></p>
+      <button id="startBtn" class="btn btn-primary btn-wide">撮影チェックを開始</button>
+    </section>
+
+    <section id="activeControls" class="card controls" hidden>
+      <button id="cameraBtn" class="btn btn-secondary">カメラ停止</button>
+      <button id="endBtn" class="btn btn-danger">撮影チェックを終了</button>
+    </section>
+
+    <section id="scannerCard" class="card" hidden>
+      <div class="section-head">
+        <div>
+          <h2>QR読み取り</h2>
+          <span id="scannerOwner" class="muted"></span>
+        </div>
+        <span id="scanHint" class="muted">QRをカメラにかざしてください</span>
+      </div>
+      <div id="reader" class="reader"></div>
+      <div id="cameraStopped" class="camera-stopped" hidden>
+        <strong>カメラ停止中</strong>
+        <span>撮影記録はそのまま残っています</span>
+      </div>
+      <div class="manual-box">
+        <input id="manualInput" type="text" autocomplete="off" placeholder="QRが読めない時：A-1" />
+        <button id="manualAddBtn" class="btn btn-secondary">手入力</button>
+      </div>
+    </section>
+
+    <section id="groupSummaryCard" class="card" hidden>
+      <div class="section-head">
+        <div>
+          <h2>班ごとの撮影回数</h2>
+          <p class="muted">回数が少ない班を優先して撮影できます</p>
+        </div>
+        <strong id="totalEvents">0件</strong>
+      </div>
+      <div id="groupSummaryList" class="group-list"></div>
+    </section>
+
+    <section id="historyCard" class="card" hidden>
+      <div class="section-head">
+        <h2>撮影履歴</h2>
+        <span class="muted">新しい順</span>
+      </div>
+      <div id="emptyHistory" class="empty-state">まだ撮影チェックはありません</div>
+      <ul id="historyList" class="history-list"></ul>
+    </section>
+
+    <section id="endedCard" class="card" hidden>
+      <h2>撮影チェックは終了しました</h2>
+      <p id="endedSummary"></p>
+      <div class="ended-actions">
+        <button id="resumeBtn" class="btn btn-secondary">撮影チェックを再開</button>
+        <button id="clearBtn" class="btn btn-ghost">この端末の撮影履歴を消去</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="resultOverlay" class="overlay" aria-hidden="true">
+    <div id="resultPanel" class="result-panel" role="status" aria-live="assertive">
+      <div id="resultIcon" class="result-icon">✓</div>
+      <div id="resultLabel" class="result-label">A-1</div>
+      <div id="resultMessage" class="result-message">撮影チェック 1回目</div>
+      <div id="resultMeta" class="result-meta"></div>
+    </div>
+  </div>
+</body>
+</html>
