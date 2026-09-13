@@ -42,7 +42,7 @@
       [-120,-80],[-70,-130],[0,-145],[75,-125],[125,-70],
       [135,10],[95,95],[20,135],[-70,120],[-125,65],[-140,-10],[-95,-75]
     ]);
-    setTimeout(() => clearEffect(root), 1150);
+    setTimeout(() => clearEffect(root), 1800);
   }
 
   function playStarBurst(root) {
@@ -169,9 +169,9 @@
   }
 
   const candidates = [
-    { id: 'star-burst', name: 'スター爆発', description: '採用候補。星が長めに飛び続ける', duration: 2500, play: playStarBurst },
+    { id: 'star-burst', name: 'スター爆発', description: '採用。2回目系で星が長めに飛び続ける', duration: 2500, play: playStarBurst },
     { id: 'star-shower', name: 'スターシャワー', description: '上から星が次々に降ってくる', duration: 2650, play: playStarShower },
-    { id: 'double-burst', name: 'ダブルスター爆発', description: '時間差で2回、星が弾ける', duration: 2700, play: playDoubleBurst },
+    { id: 'double-burst', name: 'ダブルスター爆発', description: '採用。3回目系で時間差の星が2回弾ける', duration: 2700, play: playDoubleBurst },
     { id: 'comet-cross', name: '流星クロス', description: '四隅から流星が交差して走る', duration: 2550, play: playCometCross },
     { id: 'sparkle-rain', name: 'キラキラ雨', description: '細かな光が長めに降り続ける', duration: 2750, play: playSparkleRain },
     { id: 'rainbow', name: 'レインボーリング', description: '虹色の輪がゆっくり3段で広がる', duration: 2300, play: playRainbow },
@@ -193,19 +193,63 @@
     return candidate?.id || null;
   }
 
-  window.PhotoEffects = { playStart, clearEffect, getCandidates, getCandidateDuration, playCandidate };
+  function encounterStage(count) {
+    return ((Math.max(1, count) - 1) % 3) + 1;
+  }
+
+  function holdOverlay(root, duration) {
+    if (!root) return;
+    try {
+      if (typeof overlayTimer !== 'undefined') clearTimeout(overlayTimer);
+      overlayTimer = setTimeout(() => {
+        root.classList.remove('show');
+        root.setAttribute('aria-hidden', 'true');
+        clearEffect(root);
+      }, duration);
+    } catch {
+      setTimeout(() => {
+        root.classList.remove('show');
+        root.setAttribute('aria-hidden', 'true');
+        clearEffect(root);
+      }, duration);
+    }
+  }
+
+  function playEncounterEffect(count, root = document.getElementById('resultOverlay')) {
+    const stage = encounterStage(count);
+    if (stage === 1) {
+      playStart(root);
+      holdOverlay(root, 2400);
+      return 'start';
+    }
+    if (stage === 2) {
+      playStarBurst(root);
+      holdOverlay(root, 2800);
+      return 'star-burst';
+    }
+    playDoubleBurst(root);
+    holdOverlay(root, 3000);
+    return 'double-burst';
+  }
+
+  window.PhotoEffects = {
+    playStart,
+    clearEffect,
+    getCandidates,
+    getCandidateDuration,
+    playCandidate,
+    playEncounterEffect,
+  };
 
   if (typeof record === 'function' && typeof state !== 'undefined') {
     const originalRecord = record;
-    record = function recordWithFirstEffect(raw, source) {
+    record = function recordWithEncounterEffect(raw, source) {
       const beforeCount = state.events.length;
       const result = originalRecord(raw, source);
       if (state.events.length > beforeCount) {
         const added = state.events[state.events.length - 1];
         const groupCount = state.events.filter((e) => e.groupCode === added.groupCode).length;
-        if (groupCount === 1) {
-          setTimeout(() => playStart(document.getElementById('resultOverlay')), 10);
-        }
+        setTimeout(() => playEncounterEffect(groupCount, document.getElementById('resultOverlay')), 10);
       }
       return result;
     };
