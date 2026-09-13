@@ -200,7 +200,7 @@
   function holdOverlay(root, duration) {
     if (!root) return;
     try {
-      if (typeof overlayTimer !== 'undefined') clearTimeout(overlayTimer);
+      clearTimeout(overlayTimer);
       overlayTimer = setTimeout(() => {
         root.classList.remove('show');
         root.setAttribute('aria-hidden', 'true');
@@ -241,15 +241,16 @@
     playEncounterEffect,
   };
 
-  if (typeof record === 'function' && typeof state !== 'undefined') {
-    const originalRecord = record;
-    record = function recordWithEncounterEffect(raw, source) {
-      const beforeCount = state.events.length;
-      const result = originalRecord(raw, source);
-      if (state.events.length > beforeCount) {
-        const added = state.events[state.events.length - 1];
-        const groupCount = state.events.filter((e) => e.groupCode === added.groupCode).length;
-        setTimeout(() => playEncounterEffect(groupCount, document.getElementById('resultOverlay')), 10);
+  // 成功表示そのものから回数を読む。record のラップ順に依存しないので、
+  // 2回目・3回目でも確実に対応した演出へ切り替わる。
+  if (typeof show === 'function') {
+    const originalShow = show;
+    show = function showWithEncounterEffect(type, code, msg, meta) {
+      const result = originalShow(type, code, msg, meta);
+      if (type === 'success') {
+        const match = String(msg || '').match(/撮影チェック\s*(\d+)回目/);
+        const count = match ? Number(match[1]) : 1;
+        setTimeout(() => playEncounterEffect(count, document.getElementById('resultOverlay')), 10);
       }
       return result;
     };
