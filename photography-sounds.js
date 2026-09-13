@@ -42,13 +42,14 @@
 
   const successSounds = [
     {
-      id: 'kirarin',
-      name: 'キラリン',
-      description: '明るく上がる3音',
+      id: 'star',
+      name: 'スター',
+      description: '高音がきらっと跳ねる',
       play() {
-        tone({ frequency: 784, type: 'sine', duration: 0.13, gain: 0.32 });
-        tone({ frequency: 988, type: 'sine', duration: 0.13, gain: 0.32, delay: 0.09 });
-        tone({ frequency: 1319, type: 'triangle', duration: 0.24, gain: 0.34, delay: 0.18 });
+        tone({ frequency: 1047, type: 'sine', duration: 0.10, gain: 0.27 });
+        tone({ frequency: 1319, type: 'sine', duration: 0.10, gain: 0.27, delay: 0.07 });
+        tone({ frequency: 1568, type: 'sine', duration: 0.18, gain: 0.25, delay: 0.14 });
+        tone({ frequency: 2093, type: 'sine', duration: 0.16, gain: 0.18, delay: 0.23 });
       },
     },
     {
@@ -62,44 +63,66 @@
       },
     },
     {
-      id: 'pocopoco',
-      name: 'ポコポコ',
-      description: '軽快な2音＋高音',
+      id: 'powerup',
+      name: 'パワーアップ',
+      description: '勢いよく駆け上がる5音',
       play() {
-        tone({ frequency: 440, type: 'triangle', duration: 0.10, gain: 0.30 });
-        tone({ frequency: 587, type: 'triangle', duration: 0.10, gain: 0.30, delay: 0.10 });
-        tone({ frequency: 880, type: 'sine', duration: 0.20, gain: 0.30, delay: 0.20 });
+        [440, 554, 659, 831, 1109].forEach((frequency, index) => {
+          tone({ frequency, type: 'square', duration: index === 4 ? 0.20 : 0.075, gain: 0.17, delay: index * 0.055 });
+        });
       },
     },
     {
-      id: 'ta-da',
-      name: 'タラッタ',
-      description: '短いミニファンファーレ',
+      id: 'bonus',
+      name: 'ボーナス',
+      description: '明るい高音が3段で上がる',
       play() {
-        tone({ frequency: 659, type: 'triangle', duration: 0.11, gain: 0.28 });
-        tone({ frequency: 784, type: 'triangle', duration: 0.11, gain: 0.28, delay: 0.10 });
-        tone({ frequency: 988, type: 'triangle', duration: 0.28, gain: 0.34, delay: 0.20 });
+        tone({ frequency: 659, type: 'triangle', duration: 0.10, gain: 0.25 });
+        tone({ frequency: 988, type: 'triangle', duration: 0.11, gain: 0.27, delay: 0.08 });
+        tone({ frequency: 1319, type: 'sine', duration: 0.24, gain: 0.30, delay: 0.16 });
       },
     },
     {
-      id: 'star',
-      name: 'スター',
-      description: '高音がきらっと跳ねる',
+      id: 'comet',
+      name: '流れ星',
+      description: 'きらきら音が一気に上昇',
       play() {
-        tone({ frequency: 1047, type: 'sine', duration: 0.10, gain: 0.27 });
-        tone({ frequency: 1319, type: 'sine', duration: 0.10, gain: 0.27, delay: 0.07 });
-        tone({ frequency: 1568, type: 'sine', duration: 0.18, gain: 0.25, delay: 0.14 });
-        tone({ frequency: 2093, type: 'sine', duration: 0.16, gain: 0.18, delay: 0.23 });
+        [880, 1047, 1319, 1568, 1976].forEach((frequency, index) => {
+          tone({ frequency, type: 'sine', duration: 0.11, gain: 0.20, delay: index * 0.045 });
+        });
       },
     },
     {
-      id: 'bounce',
-      name: 'ぴょこん',
-      description: '上下に跳ねるコミカル音',
+      id: 'rainbow',
+      name: 'レインボー',
+      description: 'やわらかい上昇音＋きらめき',
       play() {
-        tone({ frequency: 698, type: 'triangle', duration: 0.11, gain: 0.29 });
-        tone({ frequency: 1047, type: 'triangle', duration: 0.11, gain: 0.29, delay: 0.09 });
-        tone({ frequency: 880, type: 'triangle', duration: 0.19, gain: 0.30, delay: 0.18 });
+        tone({ frequency: 523, type: 'triangle', duration: 0.11, gain: 0.22 });
+        tone({ frequency: 659, type: 'triangle', duration: 0.11, gain: 0.22, delay: 0.075 });
+        tone({ frequency: 784, type: 'triangle', duration: 0.11, gain: 0.22, delay: 0.15 });
+        tone({ frequency: 1047, type: 'sine', duration: 0.22, gain: 0.27, delay: 0.225 });
+        tone({ frequency: 1568, type: 'sine', duration: 0.13, gain: 0.14, delay: 0.30 });
+      },
+    },
+    {
+      id: 'jackpot',
+      name: 'ジャックポット',
+      description: '当たり感のある軽快な連続音',
+      play() {
+        tone({ frequency: 784, type: 'square', duration: 0.075, gain: 0.16 });
+        tone({ frequency: 988, type: 'square', duration: 0.075, gain: 0.16, delay: 0.065 });
+        tone({ frequency: 1175, type: 'square', duration: 0.075, gain: 0.16, delay: 0.13 });
+        tone({ frequency: 1568, type: 'triangle', duration: 0.22, gain: 0.28, delay: 0.195 });
+      },
+    },
+    {
+      id: 'rocket',
+      name: 'ロケット',
+      description: '低めから一気に飛び出す上昇音',
+      play() {
+        [392, 494, 622, 784, 1245].forEach((frequency, index) => {
+          tone({ frequency, type: index < 3 ? 'square' : 'triangle', duration: index === 4 ? 0.21 : 0.08, gain: 0.18, delay: index * 0.06 });
+        });
       },
     },
   ];
