@@ -1,20 +1,10 @@
-let photoAudioContext = null;
 let photoSoundEnabled = true;
 
 const photoSoundToggleBtn = document.getElementById('soundToggleBtn');
 
-function getPhotoAudioContext() {
-  if (photoAudioContext) return photoAudioContext;
-  const AudioCtor = window.AudioContext || window.webkitAudioContext;
-  if (!AudioCtor) return null;
-  photoAudioContext = new AudioCtor();
-  return photoAudioContext;
-}
-
 async function unlockPhotoAudio() {
   try {
-    const ctx = getPhotoAudioContext();
-    if (ctx && ctx.state === 'suspended') await ctx.resume();
+    await window.PhotoSounds?.unlock?.();
   } catch {}
 }
 
@@ -25,35 +15,18 @@ function renderPhotoSoundButton() {
   photoSoundToggleBtn.classList.toggle('is-muted', !photoSoundEnabled);
 }
 
-function photoTone({ frequency, type, duration, gain, delay = 0 }) {
+async function photoSuccessSound() {
   if (!photoSoundEnabled) return;
   try {
-    const ctx = getPhotoAudioContext();
-    if (!ctx) return;
-    const start = ctx.currentTime + delay;
-    const osc = ctx.createOscillator();
-    const amp = ctx.createGain();
-    osc.type = type;
-    osc.frequency.value = frequency;
-    amp.gain.setValueAtTime(0.0001, start);
-    amp.gain.linearRampToValueAtTime(gain, start + 0.02);
-    amp.gain.setValueAtTime(gain, Math.max(start + 0.02, start + duration - 0.04));
-    amp.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-    osc.connect(amp);
-    amp.connect(ctx.destination);
-    osc.start(start);
-    osc.stop(start + duration);
+    await window.PhotoSounds?.playRandomSuccess?.();
   } catch {}
 }
 
-// 通常の班チェックと同じ成功音。
-function photoSuccessSound() {
-  photoTone({ frequency: 1000, type: 'triangle', duration: 0.60, gain: 0.50 });
-}
-
-function photoErrorSound() {
-  photoTone({ frequency: 240, type: 'square', duration: 0.35, gain: 0.45 });
-  photoTone({ frequency: 240, type: 'square', duration: 0.35, gain: 0.45, delay: 0.43 });
+async function photoErrorSound() {
+  if (!photoSoundEnabled) return;
+  try {
+    await window.PhotoSounds?.playError?.();
+  } catch {}
 }
 
 if (photoSoundToggleBtn) {
