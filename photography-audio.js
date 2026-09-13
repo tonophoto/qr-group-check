@@ -18,7 +18,7 @@ async function unlockPhotoAudio() {
 function photoTone({ frequency, type, duration, gain, delay = 0 }) {
   try {
     const ctx = getPhotoAudioContext();
-    if (!ctx || ctx.state !== 'running') return;
+    if (!ctx) return;
     const start = ctx.currentTime + delay;
     const osc = ctx.createOscillator();
     const amp = ctx.createGain();
@@ -35,6 +35,7 @@ function photoTone({ frequency, type, duration, gain, delay = 0 }) {
   } catch {}
 }
 
+// 通常の班チェックと同じ成功音。
 function photoSuccessSound() {
   photoTone({ frequency: 1000, type: 'triangle', duration: 0.60, gain: 0.50 });
 }
@@ -52,16 +53,19 @@ if (typeof record === 'function') {
   const originalRecord = record;
   record = function recordWithAudio(raw, source) {
     unlockPhotoAudio();
+
     const beforeCount = state.events.length;
     const code = norm(raw);
     const groups = new Set(configuredGroups());
-    const wasEligible = state.status === 'active' && !scanLocked && !!code && groups.has(code);
+    const wasLocked = scanLocked;
+    const isInvalid = !code || !groups.has(code);
 
     const result = originalRecord(raw, source);
 
     if (state.events.length > beforeCount) {
       photoSuccessSound();
-    } else if (state.status === 'active' && !wasEligible) {
+    } else if (state.status === 'active' && !wasLocked && isInvalid) {
+      // 読み取り直後のscanLocked中に同じQRが再検出されてもエラー音を鳴らさない。
       photoErrorSound();
     }
 
