@@ -208,18 +208,16 @@ function renderSummary(groups) {
   els.totalEvents.textContent = `${state.events.length}件`;
   els.groupSummaryList.innerHTML = '';
 
-  [...by.entries()]
-    .sort((a, b) => a[1].length - b[1].length || a[0].localeCompare(b[0], 'ja'))
-    .forEach(([g, ev]) => {
-      const last = ev.at(-1);
-      const row = document.createElement('div');
-      row.className = 'group-row';
-      row.innerHTML = '<span class="group-code"></span><span class="group-count"></span><span class="group-last"></span>';
-      row.children[0].textContent = g;
-      row.children[1].textContent = `${ev.length}回`;
-      row.children[2].textContent = last ? `最終 ${time(last.capturedAt)} ${last.photographerName}` : '未撮影';
-      els.groupSummaryList.appendChild(row);
-    });
+  [...by.entries()].forEach(([g, ev]) => {
+    const last = ev.at(-1);
+    const row = document.createElement('div');
+    row.className = 'group-row';
+    row.innerHTML = '<span class="group-code"></span><span class="group-count"></span><span class="group-last"></span>';
+    row.children[0].textContent = g;
+    row.children[1].textContent = `${ev.length}回`;
+    row.children[2].textContent = last ? `最終 ${time(last.capturedAt)} ${last.photographerName}` : '未撮影';
+    els.groupSummaryList.appendChild(row);
+  });
 }
 
 function renderHistory() {
