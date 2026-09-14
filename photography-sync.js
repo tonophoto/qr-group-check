@@ -36,6 +36,11 @@
     render();
   }
 
+  if (state.tripId !== access.tripId) {
+    state.tripId = access.tripId;
+    state.status = 'idle';
+    state.events = [];
+  }
   state.photographerId = access.uid;
   if (!state.photographerName) state.photographerName = access.displayName || access.email || '撮影者';
   save();
