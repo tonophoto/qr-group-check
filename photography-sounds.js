@@ -139,3 +139,9 @@
     playError,
   };
 })();
+
+if (document.documentElement.dataset.authPage === 'photography') {
+  const syncScript = document.createElement('script');
+  syncScript.src = './photography-sync.js?v=20260914-1';
+  document.head.appendChild(syncScript);
+}
