@@ -19,7 +19,9 @@ import {
 
 const firebaseConfig = {
   apiKey: 'AIzaSyDs-DC5EpcgaNsYN8F5zy4D98k5zfB8KV8',
-  authDomain: 'school-trip-chat.firebaseapp.com',
+  authDomain: location.hostname === 'school-trip-chat-qr.web.app'
+    ? 'school-trip-chat-qr.web.app'
+    : 'school-trip-chat.firebaseapp.com',
   projectId: 'school-trip-chat',
   storageBucket: 'school-trip-chat.firebasestorage.app',
   messagingSenderId: '69261895871',
@@ -97,6 +99,17 @@ function currentTripId() {
   try { return localStorage.getItem(TRIP_STORAGE_KEY)?.trim() || ''; } catch { return ''; }
 }
 
+function authErrorMessage(error) {
+  const code = error?.code || '';
+  if (code === 'auth/unauthorized-domain') {
+    return 'このHostingドメインがFirebase Authの許可ドメインに未登録です。管理者に連絡してください。';
+  }
+  if (code === 'auth/network-request-failed') {
+    return 'Googleログインに接続できませんでした。通信状態を確認してください。';
+  }
+  return code ? `ログインできませんでした。（${code}）` : 'ログインできませんでした。もう一度お試しください。';
+}
+
 function showLogin(message = '') {
   document.querySelector('.auth-gate')?.remove();
   const gate = document.createElement('div');
@@ -116,16 +129,28 @@ function showLogin(message = '') {
     error.hidden = true;
     try {
       await signInWithPopup(auth, provider);
-    } catch (err) {
-      const code = err?.code || '';
-      if (['auth/popup-blocked','auth/cancelled-popup-request','auth/operation-not-supported-in-this-environment'].includes(code)) {
-        await signInWithRedirect(auth, provider);
-        return;
+    } catch (popupError) {
+      const code = popupError?.code || '';
+      const shouldRedirect = [
+        'auth/popup-blocked',
+        'auth/cancelled-popup-request',
+        'auth/operation-not-supported-in-this-environment',
+      ].includes(code);
+      if (shouldRedirect) {
+        try {
+          await signInWithRedirect(auth, provider);
+          return;
+        } catch (redirectError) {
+          console.error('Google redirect login failed', redirectError);
+          error.hidden = false;
+          error.textContent = authErrorMessage(redirectError);
+          button.disabled = false;
+          return;
+        }
       }
+      console.error('Google popup login failed', popupError);
       error.hidden = false;
-      error.textContent = code === 'auth/unauthorized-domain'
-        ? 'このHostingドメインがFirebase Authの許可ドメインに未登録です。管理者に連絡してください。'
-        : 'ログインできませんでした。もう一度お試しください。';
+      error.textContent = authErrorMessage(popupError);
       button.disabled = false;
     }
   });
