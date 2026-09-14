@@ -14,6 +14,15 @@
     busy: false,
   };
 
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
+
   function setStatus(message, isError = false) {
     const el = document.getElementById('tripAdminStatus');
     if (!el) return;
@@ -30,12 +39,15 @@
   function memberRow(member) {
     const isSelf = member.id === access.uid;
     const disabled = member.disabled === true;
+    const id = escapeHtml(member.id);
+    const displayName = escapeHtml(member.displayName || '名前未設定');
+    const email = escapeHtml(member.email || 'メール未設定');
     return `
-      <div class="admin-member-row" data-member-id="${member.id}">
+      <div class="admin-member-row" data-member-id="${id}">
         <div class="admin-member-main">
-          <strong>${member.displayName || '名前未設定'}${isSelf ? '（自分）' : ''}</strong>
-          <span>${member.email || 'メール未設定'}</span>
-          <code>${member.id}</code>
+          <strong>${displayName}${isSelf ? '（自分）' : ''}</strong>
+          <span>${email}</span>
+          <code>${id}</code>
         </div>
         <div class="admin-member-controls">
           <select class="admin-role-select" ${isSelf ? 'disabled' : ''}>${roleOptions(member.role)}</select>
@@ -49,12 +61,15 @@
   }
 
   function requestRow(request) {
+    const id = escapeHtml(request.id);
+    const displayName = escapeHtml(request.displayName || '名前未設定');
+    const email = escapeHtml(request.email || 'メール未設定');
     return `
-      <div class="admin-request-row" data-request-id="${request.id}">
+      <div class="admin-request-row" data-request-id="${id}">
         <div class="admin-member-main">
-          <strong>${request.displayName || '名前未設定'}</strong>
-          <span>${request.email || 'メール未設定'}</span>
-          <code>${request.id}</code>
+          <strong>${displayName}</strong>
+          <span>${email}</span>
+          <code>${id}</code>
         </div>
         <div class="admin-member-controls">
           <select class="admin-request-role">${roleOptions('teacher')}</select>
