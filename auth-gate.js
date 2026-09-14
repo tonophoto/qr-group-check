@@ -19,9 +19,7 @@ import {
 
 const firebaseConfig = {
   apiKey: 'AIzaSyDs-DC5EpcgaNsYN8F5zy4D98k5zfB8KV8',
-  authDomain: location.hostname === 'school-trip-chat-qr.web.app'
-    ? 'school-trip-chat-qr.web.app'
-    : 'school-trip-chat.firebaseapp.com',
+  authDomain: 'school-trip-chat.firebaseapp.com',
   projectId: 'school-trip-chat',
   storageBucket: 'school-trip-chat.firebasestorage.app',
   messagingSenderId: '69261895871',
