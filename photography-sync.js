@@ -41,6 +41,8 @@
   save();
   render();
 
+  if (typeof els !== 'undefined' && els?.clearBtn) els.clearBtn.hidden = true;
+
   let firestoreApi = null;
   let db = null;
   let collectionRef = null;
@@ -76,17 +78,47 @@
     }
   }
 
-  const originalRecord = record;
   record = function syncedRecord(raw, source) {
-    const before = new Set(state.events.map((event) => event.eventId));
-    originalRecord(raw, source);
-    const created = [...state.events].reverse().find((event) => !before.has(event.eventId));
-    if (!created) return;
-    created.photographerId = access.uid;
-    created.photographerName = state.photographerName || access.displayName || access.email || '撮影者';
-    created.syncStatus = 'pending';
+    if (state.status !== 'active' || scanLocked) return;
+    const code = norm(raw);
+    const groups = new Set(configuredGroups());
+    scanLocked = true;
+
+    if (!code || !groups.has(code)) {
+      show('error', code, '今回の対象班ではありません', '');
+      try { navigator.vibrate?.([120, 60, 120]); } catch {}
+      setTimeout(() => { scanLocked = false; }, 900);
+      return;
+    }
+
+    const now = Date.now();
+    const recentOwn = [...state.events].reverse().find((event) => (
+      event.groupCode === code && event.photographerId === access.uid
+    ));
+    if (recentOwn && now - new Date(recentOwn.capturedAt).getTime() < 5000) {
+      setTimeout(() => { scanLocked = false; }, 700);
+      return;
+    }
+
+    const event = {
+      eventId: id(),
+      groupCode: code,
+      photographerId: access.uid,
+      photographerName: state.photographerName || access.displayName || access.email || '撮影者',
+      capturedAt: new Date().toISOString(),
+      source,
+      syncStatus: 'pending',
+    };
+
+    state.events.push(event);
+    state.events = sortEvents(state.events);
     save();
-    uploadEvent(created);
+    const count = state.events.filter((item) => item.groupCode === code).length;
+    render();
+    show('success', code, `撮影チェック ${count}回目`, `${event.photographerName}・${time(event.capturedAt)}`);
+    try { navigator.vibrate?.(70); } catch {}
+    uploadEvent(event);
+    setTimeout(() => { scanLocked = false; }, 900);
   };
 
   async function boot() {
