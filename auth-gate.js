@@ -13,6 +13,8 @@ import {
   doc,
   getDoc,
   getFirestore,
+  serverTimestamp,
+  setDoc,
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -52,6 +54,7 @@ const pageScripts = {
     './admin-entry.js?v=20260913-2',
   ],
   admin: [
+    './admin-trip.js?v=20260914-1',
     './photography-sounds.js?v=20260913-3',
     './photography-effects.js?v=20260913-7',
     './sound-check.js?v=20260913-1',
@@ -165,7 +168,17 @@ function showTripEntry(user, message = '') {
   input.focus();
 }
 
-function showDenied(user, tripId, reason) {
+async function submitJoinRequest(user, tripId) {
+  if (!user.email) throw new Error('Googleアカウントのメールアドレスを取得できません。');
+  await setDoc(doc(db, 'qrTrips', tripId, 'joinRequests', user.uid), {
+    uid: user.uid,
+    displayName: user.displayName || user.email,
+    email: user.email,
+    createdAt: serverTimestamp(),
+  });
+}
+
+function showDenied(user, tripId, reason, canRequestAccess = false) {
   document.querySelector('.auth-gate')?.remove();
   const gate = document.createElement('div');
   gate.className = 'auth-gate';
@@ -174,11 +187,31 @@ function showDenied(user, tripId, reason) {
       <h1>この旅行には参加できません</h1>
       <p class="auth-denied-reason"></p>
       <div class="auth-gate-meta"></div>
+      ${canRequestAccess ? '<button class="auth-gate-btn auth-request-access" type="button">この旅行への参加を申請</button>' : ''}
+      <div class="auth-gate-error auth-request-result" hidden></div>
       <button class="auth-gate-btn auth-change-trip" type="button">旅行コードを変更</button>
       <button class="auth-gate-btn auth-signout" type="button">別のGoogleアカウントでログイン</button>
     </div>`;
   gate.querySelector('.auth-denied-reason').textContent = reason;
   gate.querySelector('.auth-gate-meta').textContent = `trip: ${tripId} / uid: ${user.uid}`;
+  const requestButton = gate.querySelector('.auth-request-access');
+  const requestResult = gate.querySelector('.auth-request-result');
+  requestButton?.addEventListener('click', async () => {
+    requestButton.disabled = true;
+    requestResult.hidden = true;
+    try {
+      await submitJoinRequest(user, tripId);
+      requestResult.hidden = false;
+      requestResult.textContent = '参加申請を送りました。管理者の承認後に利用できます。';
+      requestButton.textContent = '申請済み';
+    } catch (error) {
+      requestResult.hidden = false;
+      requestResult.textContent = error?.code === 'permission-denied'
+        ? '参加申請機能の権限設定がまだ反映されていません。'
+        : (error?.message || '参加申請を送信できませんでした。');
+      requestButton.disabled = false;
+    }
+  });
   gate.querySelector('.auth-change-trip').addEventListener('click', () => {
     try { localStorage.removeItem(TRIP_STORAGE_KEY); } catch {}
     const url = new URL(location.href);
@@ -252,8 +285,13 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  if (!membership || membership.disabled) {
-    showDenied(user, tripId, 'このGoogleアカウントは、この旅行の参加者として登録されていません。');
+  if (!membership) {
+    showDenied(user, tripId, 'このGoogleアカウントは、この旅行の参加者としてまだ登録されていません。', true);
+    return;
+  }
+
+  if (membership.disabled) {
+    showDenied(user, tripId, 'このGoogleアカウントの参加権限は無効になっています。管理者に連絡してください。');
     return;
   }
 
