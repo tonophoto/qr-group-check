@@ -15,6 +15,33 @@ function renderPhotoSoundButton() {
   photoSoundToggleBtn.classList.toggle('is-muted', !photoSoundEnabled);
 }
 
+function installPhotoSoundGate() {
+  const sounds = window.PhotoSounds;
+  if (!sounds || sounds.__muteGateInstalled) return;
+
+  const originalPlaySuccess = sounds.playSuccess?.bind(sounds);
+  const originalPlayRandomSuccess = sounds.playRandomSuccess?.bind(sounds);
+  const originalPlayError = sounds.playError?.bind(sounds);
+
+  if (originalPlaySuccess) {
+    sounds.playSuccess = async (...args) => (
+      photoSoundEnabled ? originalPlaySuccess(...args) : null
+    );
+  }
+  if (originalPlayRandomSuccess) {
+    sounds.playRandomSuccess = async (...args) => (
+      photoSoundEnabled ? originalPlayRandomSuccess(...args) : null
+    );
+  }
+  if (originalPlayError) {
+    sounds.playError = async (...args) => (
+      photoSoundEnabled ? originalPlayError(...args) : null
+    );
+  }
+
+  sounds.__muteGateInstalled = true;
+}
+
 function encounterStage(count) {
   return ((Math.max(1, count) - 1) % 3) + 1;
 }
@@ -47,6 +74,8 @@ if (photoSoundToggleBtn) {
 ['pointerdown', 'touchstart', 'click'].forEach((eventName) => {
   document.addEventListener(eventName, unlockPhotoAudio, { once: true, passive: true });
 });
+
+installPhotoSoundGate();
 
 if (typeof record === 'function') {
   const originalRecord = record;
