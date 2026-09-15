@@ -33,6 +33,18 @@
     return value.slice(0, 14).map((n) => Math.max(1, Math.min(8, Number(n) || 1)));
   }
 
+  function playSuccessSound(count) {
+    try {
+      const stage = ((Math.max(1, count) - 1) % 3) + 1;
+      const soundId = stage === 1 ? 'powerup-c' : stage === 2 ? 'star' : 'levelup';
+      window.PhotoSounds?.playSuccess?.(soundId);
+    } catch {}
+  }
+
+  function playErrorSound() {
+    try { window.PhotoSounds?.playError?.(); } catch {}
+  }
+
   if (state.tripId !== access.tripId) {
     state.tripId = access.tripId;
     state.sessionId = '';
@@ -156,6 +168,7 @@
 
     if (!code || !groups.has(code)) {
       show('error', code, '今回の対象班ではありません', '');
+      playErrorSound();
       try { navigator.vibrate?.([120, 60, 120]); } catch {}
       setTimeout(() => { scanLocked = false; }, 900);
       return;
@@ -189,6 +202,7 @@
     const count = state.events.filter((item) => item.sessionId === state.sessionId && item.groupCode === code).length;
     render();
     show('success', code, `撮影チェック ${count}回目`, `${event.photographerName}・${time(event.capturedAt)}`);
+    playSuccessSound(count);
     try { navigator.vibrate?.(70); } catch {}
     uploadEvent(event);
     setTimeout(() => { scanLocked = false; }, 900);
@@ -231,23 +245,45 @@
   }
 
   async function endSharedSession() {
-    if (!ready || !firestoreApi || !sessionRef || !state.sessionId) return;
+    if (!ready || !firestoreApi || !sessionRef || !state.sessionId) {
+      setNotice('共有チェックを終了できません', '共有セッションの読み込み完了後にもう一度押してください。');
+      return;
+    }
     if (!confirm('撮影チェックを終了しますか？\n他の撮影者の端末も終了します。')) return;
+
+    const endingSessionId = state.sessionId;
     try {
-      await firestoreApi.runTransaction(db, async (tx) => {
+      const changed = await firestoreApi.runTransaction(db, async (tx) => {
         const snap = await tx.get(sessionRef);
-        if (!snap.exists()) return;
+        if (!snap.exists()) return false;
         const data = snap.data();
-        if (data.sessionId !== state.sessionId || data.status !== 'active') return;
+        if (data.status === 'ended' && data.sessionId === endingSessionId) return true;
+        if (data.sessionId !== endingSessionId || data.status !== 'active') return false;
         tx.update(sessionRef, {
           status: 'ended',
           endedAt: firestoreApi.serverTimestamp(),
           endedBy: access.uid,
         });
+        return true;
       });
+
+      if (!changed) {
+        setNotice('共有チェックを終了できません', '別の端末でセッション状態が変更されました。画面を更新して確認してください。');
+        return;
+      }
+
+      currentSession = currentSession ? { ...currentSession, status: 'ended' } : currentSession;
+      state.status = 'ended';
+      save();
+      cameraPaused = false;
+      render();
+      await stopScanner();
+      setNotice('Firestore共有・チェック終了', '撮影チェックを終了しました。他の撮影者の端末にも反映されます。');
     } catch (error) {
       console.error('photo session end failed', error);
-      setNotice('共有チェックを終了できません', '通信状態またはFirestore権限を確認してください。');
+      setNotice('共有チェックを終了できません', error?.code === 'permission-denied'
+        ? 'Firestore権限で終了処理が拒否されました。Rulesの反映状態を確認してください。'
+        : '通信状態を確認して、もう一度押してください。');
     }
   }
 
