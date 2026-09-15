@@ -12,9 +12,10 @@
   <style>
     .admin-badge{display:inline-block;padding:4px 9px;border-radius:999px;background:#fee2e2;color:#991b1b;font-size:11px;font-weight:900;margin-bottom:6px}
     .effect-candidate-list{display:grid;gap:10px}.effect-candidate-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:12px;border:1px solid #e2e8f0;border-radius:14px;background:#f8fafc}.effect-candidate-info{display:grid;gap:3px}.effect-candidate-row .btn{min-width:92px}.effect-adopted{display:inline-block;width:max-content;padding:3px 8px;border-radius:999px;background:#dcfce7;color:#166534;font-size:11px;font-weight:900;margin-bottom:2px}.admin-section-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.admin-divider{height:1px;background:#e2e8f0;margin:8px 0 14px}
-    .admin-trip-summary{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}.admin-trip-code{display:grid;gap:4px}.admin-trip-code code{font-size:16px;font-weight:900}.admin-status{margin:10px 0 0;font-size:13px;font-weight:700;color:#475569}.admin-status-error{color:#b91c1c}.admin-count{display:inline-block;padding:3px 8px;border-radius:999px;background:#e2e8f0;color:#334155;font-size:12px;font-weight:900}.admin-list{display:grid;gap:10px}.admin-member-row,.admin-request-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;border:1px solid #e2e8f0;border-radius:14px;background:#f8fafc}.admin-member-main{display:grid;gap:3px;min-width:0}.admin-member-main strong,.admin-member-main span,.admin-member-main code{overflow-wrap:anywhere}.admin-member-main span{font-size:13px;color:#475569}.admin-member-main code{font-size:11px;color:#64748b}.admin-member-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.admin-role-select,.admin-form input,.admin-form select{min-height:40px;border:1px solid #cbd5e1;border-radius:10px;padding:8px 10px;background:#fff;color:#0f172a;box-sizing:border-box}.admin-disabled-toggle{display:flex;gap:6px;align-items:center;font-size:13px;font-weight:700}.admin-form{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1.3fr) minmax(90px,.65fr) auto;gap:8px;align-items:end;margin-bottom:14px}.admin-form-field{display:grid;gap:5px;min-width:0}.admin-form-field label{font-size:12px;font-weight:800;color:#475569}.admin-form input,.admin-form select{width:100%;min-width:0}.admin-tools-heading{margin-top:6px;padding-top:12px;border-top:2px solid #e2e8f0}.admin-tools-heading h2{margin-bottom:4px}
+    .admin-trip-summary{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}.admin-trip-code{display:grid;gap:4px}.admin-trip-code code{font-size:16px;font-weight:900}.admin-status{margin:10px 0 0;font-size:13px;font-weight:700;color:#475569}.admin-status-error{color:#b91c1c}.admin-count{display:inline-block;padding:3px 8px;border-radius:999px;background:#e2e8f0;color:#334155;font-size:12px;font-weight:900}.admin-list{display:grid;gap:10px}.admin-member-row,.admin-request-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;border:1px solid #e2e8f0;border-radius:14px;background:#f8fafc}.admin-member-row.is-disabled{opacity:.68}.admin-member-main{display:grid;gap:4px;min-width:0}.admin-member-main strong,.admin-member-main span,.admin-member-main code{overflow-wrap:anywhere}.admin-member-main span{font-size:13px;color:#475569}.admin-member-main code{font-size:11px;color:#64748b}.admin-member-title{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.admin-member-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.admin-role-select,.admin-request-role,.admin-form input,.admin-form select{min-height:40px;border:1px solid #cbd5e1;border-radius:10px;padding:8px 10px;background:#fff;color:#0f172a;box-sizing:border-box}.admin-disabled-toggle{display:flex;gap:6px;align-items:center;font-size:13px;font-weight:700}.admin-form{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1.3fr) minmax(90px,.65fr) auto;gap:8px;align-items:end;margin-bottom:14px}.admin-form-field{display:grid;gap:5px;min-width:0}.admin-form-field label{font-size:12px;font-weight:800;color:#475569}.admin-form input,.admin-form select{width:100%;min-width:0}.admin-tools-heading{margin-top:6px;padding-top:12px;border-top:2px solid #e2e8f0}.admin-tools-heading h2{margin-bottom:4px}
+    .admin-role-badge,.admin-state-badge{display:inline-flex;align-items:center;padding:3px 7px;border-radius:999px;font-size:10px;font-weight:900}.admin-role-teacher{background:#dbeafe;color:#1d4ed8}.admin-role-photographer{background:#ede9fe;color:#6d28d9}.admin-role-admin{background:#fee2e2;color:#991b1b}.admin-state-badge.is-on{background:#dcfce7;color:#166534}.admin-state-badge.is-off{background:#e2e8f0;color:#475569}.admin-copy-line{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.admin-copy-btn{border:0;background:#e2e8f0;color:#334155;border-radius:999px;padding:3px 8px;font-size:10px;font-weight:800;cursor:pointer}.admin-audit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.admin-audit-grid h3{font-size:13px;margin:0 0 8px}.admin-stat-list{display:grid;gap:6px}.admin-stat-row{display:flex;justify-content:space-between;gap:12px;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:13px}.admin-audit-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.admin-session-state{font-size:12px;font-weight:800;color:#475569}
     @media(max-width:900px){.admin-form{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-form>button{grid-column:1/-1;width:100%}}
-    @media(max-width:760px){.admin-member-row,.admin-request-row{grid-template-columns:1fr}.admin-member-controls{display:grid;grid-template-columns:1fr 1fr}.admin-member-controls .btn{width:100%}.admin-form{grid-template-columns:1fr}.admin-form>button{grid-column:auto;width:100%}.effect-candidate-row{grid-template-columns:1fr}.effect-candidate-row .btn{width:100%}}
+    @media(max-width:760px){.admin-member-row,.admin-request-row{grid-template-columns:1fr}.admin-member-controls{display:grid;grid-template-columns:1fr 1fr}.admin-member-controls .btn{width:100%}.admin-form{grid-template-columns:1fr}.admin-form>button{grid-column:auto;width:100%}.effect-candidate-row{grid-template-columns:1fr}.effect-candidate-row .btn{width:100%}.admin-audit-grid{grid-template-columns:1fr}}
   </style>
   <script type="module" src="./auth-gate.js?v=20260914-1"></script>
 </head>
@@ -35,7 +36,7 @@
           <span class="muted">現在の旅行コード</span>
           <code id="adminTripCode">-</code>
         </div>
-        <button id="adminRefreshBtn" class="btn btn-secondary" type="button">再読み込み</button>
+        <button id="adminRefreshBtn" class="btn btn-secondary" type="button">再接続</button>
       </div>
       <p id="tripAdminStatus" class="admin-status">管理情報を読み込んでいます…</p>
     </section>
@@ -67,6 +68,22 @@
         <button class="btn btn-primary" type="submit">追加</button>
       </form>
       <div id="adminMemberList" class="admin-list"><p class="muted">読み込み中…</p></div>
+    </section>
+
+    <section class="card">
+      <div class="admin-section-title">
+        <div>
+          <h2>撮影履歴・集計</h2>
+          <p class="muted">現在の共有撮影セッションを班別・撮影者別に集計します。</p>
+        </div>
+        <span id="adminPhotoTotal" class="admin-count">0件</span>
+      </div>
+      <div class="admin-audit-actions">
+        <span id="adminPhotoSessionState" class="admin-session-state">読み込み中…</span>
+        <button id="adminPhotoCsvBtn" class="btn btn-secondary" type="button" disabled>CSV出力</button>
+      </div>
+      <div class="admin-divider"></div>
+      <div id="adminPhotoAuditList"><p class="muted">撮影履歴を読み込んでいます…</p></div>
     </section>
 
     <div class="admin-tools-heading">
