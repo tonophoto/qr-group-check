@@ -97,7 +97,7 @@
       state.events = [];
       save();
       render();
-      if (previousStatus === 'active') await stopScanner();
+      if (previousStatus === 'active' || scanner) await stopScanner();
       return;
     }
 
@@ -124,7 +124,7 @@
       setNotice('Firestore共有・チェック終了', 'この撮影チェックは終了しました。再開すると全端末に反映されます。');
       cameraPaused = false;
       render();
-      if (previousStatus === 'active') await stopScanner();
+      if (previousStatus === 'active' || scanner) await stopScanner();
     }
   }
 
@@ -156,7 +156,7 @@
       const local = state.events.find((item) => item.eventId === payload.eventId);
       if (local) local.syncStatus = 'error';
       save();
-      setNotice('Firestore同期エラー・端末内には保存済み', '通信復旧後に再読み込みしてください。撮影記録はこの端末には残っています。');
+      setNotice('Firestore同期エラー・端末内には保存済み', `Firestore: ${error?.code || 'unknown-error'}`);
     }
   }
 
@@ -216,7 +216,7 @@
     }
     state.photographerName = name;
     save();
-    if (!ready || !firestoreApi || !sessionRef) {
+    if (!firestoreApi || !sessionRef) {
       setNotice('Firestore接続中', '共有セッションの準備ができるまで少し待ってください。');
       return;
     }
@@ -240,25 +240,24 @@
       });
     } catch (error) {
       console.error('photo session start failed', error);
-      setNotice('共有チェックを開始できません', '通信状態またはFirestore権限を確認してください。');
+      setNotice('共有チェックを開始できません', `Firestore: ${error?.code || 'unknown-error'}`);
     }
   }
 
   async function endSharedSession() {
-    if (!ready || !firestoreApi || !sessionRef || !state.sessionId) {
-      setNotice('共有チェックを終了できません', '共有セッションの読み込み完了後にもう一度押してください。');
+    if (!firestoreApi || !sessionRef) {
+      setNotice('共有チェックを終了できません', 'Firestore接続の準備中です。');
       return;
     }
     if (!confirm('撮影チェックを終了しますか？\n他の撮影者の端末も終了します。')) return;
 
-    const endingSessionId = state.sessionId;
     try {
       const changed = await firestoreApi.runTransaction(db, async (tx) => {
         const snap = await tx.get(sessionRef);
         if (!snap.exists()) return false;
         const data = snap.data();
-        if (data.status === 'ended' && data.sessionId === endingSessionId) return true;
-        if (data.sessionId !== endingSessionId || data.status !== 'active') return false;
+        if (data.status === 'ended') return true;
+        if (data.status !== 'active') return false;
         tx.update(sessionRef, {
           status: 'ended',
           endedAt: firestoreApi.serverTimestamp(),
@@ -268,7 +267,7 @@
       });
 
       if (!changed) {
-        setNotice('共有チェックを終了できません', '別の端末でセッション状態が変更されました。画面を更新して確認してください。');
+        setNotice('共有チェックを終了できません', '共有セッションの状態を確認できませんでした。');
         return;
       }
 
@@ -281,20 +280,18 @@
       setNotice('Firestore共有・チェック終了', '撮影チェックを終了しました。他の撮影者の端末にも反映されます。');
     } catch (error) {
       console.error('photo session end failed', error);
-      setNotice('共有チェックを終了できません', error?.code === 'permission-denied'
-        ? 'Firestore権限で終了処理が拒否されました。Rulesの反映状態を確認してください。'
-        : '通信状態を確認して、もう一度押してください。');
+      setNotice('共有チェックを終了できません', `Firestore: ${error?.code || 'unknown-error'}`);
     }
   }
 
   async function resumeSharedSession() {
-    if (!ready || !firestoreApi || !sessionRef || !state.sessionId) return;
+    if (!firestoreApi || !sessionRef) return;
     try {
       await firestoreApi.runTransaction(db, async (tx) => {
         const snap = await tx.get(sessionRef);
         if (!snap.exists()) return;
         const data = snap.data();
-        if (data.sessionId !== state.sessionId || data.status !== 'ended') return;
+        if (data.status !== 'ended') return;
         tx.update(sessionRef, {
           status: 'active',
           endedAt: null,
@@ -303,7 +300,7 @@
       });
     } catch (error) {
       console.error('photo session resume failed', error);
-      setNotice('共有チェックを再開できません', '通信状態またはFirestore権限を確認してください。');
+      setNotice('共有チェックを再開できません', `Firestore: ${error?.code || 'unknown-error'}`);
     }
   }
 
@@ -364,7 +361,7 @@
         },
         (error) => {
           console.error('photo check listener failed', error);
-          setNotice('Firestore同期エラー・端末内保存', '共有履歴を読み込めません。撮影記録はこの端末には保存されます。');
+          setNotice('Firestore同期エラー・端末内保存', `共有履歴を読み込めません。（${error?.code || 'unknown-error'}）`);
         },
       );
 
@@ -381,15 +378,24 @@
           ));
           pending.forEach((event) => uploadEvent(event));
         },
-        (error) => {
+        async (error) => {
           console.error('photo session listener failed', error);
           ready = false;
-          setNotice('共有セッション同期エラー', '開始・終了状態を共有できません。通信状態またはFirestore権限を確認してください。');
+          try {
+            const snap = await firestore.getDocFromServer(sessionRef);
+            currentSession = snap.exists() ? snap.data() : null;
+            ready = true;
+            await applySession(currentSession);
+            setNotice('Firestore共有・再接続済み', '共有セッションを再取得しました。');
+          } catch (readError) {
+            console.error('photo session fallback read failed', readError);
+            setNotice('共有セッション同期エラー', `Firestore: ${readError?.code || error?.code || 'unknown-error'}`);
+          }
         },
       );
     } catch (error) {
       console.error('photo check sync init failed', error);
-      setNotice('Firestore同期エラー・端末内保存', '共有機能を初期化できません。撮影記録はこの端末には保存されます。');
+      setNotice('Firestore同期エラー・端末内保存', `共有機能を初期化できません。（${error?.code || 'unknown-error'}）`);
     }
   }
 
