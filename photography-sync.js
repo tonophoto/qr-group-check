@@ -44,7 +44,10 @@
   save();
   render();
 
-  if (typeof els !== 'undefined' && els?.clearBtn) els.clearBtn.hidden = true;
+  if (typeof els !== 'undefined' && els?.clearBtn) {
+    els.clearBtn.hidden = false;
+    els.clearBtn.textContent = '新しい撮影チェック';
+  }
 
   let firestoreApi = null;
   let db = null;
@@ -100,7 +103,7 @@
 
     if (state.status === 'active') {
       setNotice('Firestore共有・共同チェック中', '開始状態・対象班・撮影履歴を同じ旅行の撮影者全員で共有しています。');
-      if (previousStatus !== 'active' || sessionChanged) {
+      if (previousStatus !== 'active' || sessionChanged || !scanner) {
         cameraPaused = false;
         render();
         await startScanner();
@@ -268,6 +271,17 @@
     }
   }
 
+  async function prepareNewSharedSession() {
+    if (state.status !== 'ended') return;
+    state.sessionId = '';
+    state.status = 'idle';
+    state.events = [];
+    save();
+    render();
+    setNotice('新しい共有チェックの準備', '対象クラス・班を設定して開始すると、全撮影者に共有されます。');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   function intercept(button, handler) {
     button?.addEventListener('click', (event) => {
       event.preventDefault();
@@ -279,6 +293,7 @@
   intercept(els?.startBtn, beginSharedSession);
   intercept(els?.endBtn, endSharedSession);
   intercept(els?.resumeBtn, resumeSharedSession);
+  intercept(els?.clearBtn, prepareNewSharedSession);
 
   async function boot() {
     try {
