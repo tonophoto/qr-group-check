@@ -28,16 +28,14 @@
     });
   }
 
-  function mergeRemoteEvents(remoteEvents) {
-    const remoteById = new Map(remoteEvents.map((event) => [event.eventId, event]));
-    const localOnly = state.events.filter((event) => !remoteById.has(event.eventId));
-    state.events = sortEvents([...remoteEvents, ...localOnly]);
-    save();
-    render();
+  function sanitizeSessionGroups(value) {
+    if (!Array.isArray(value) || value.length === 0) return [3];
+    return value.slice(0, 14).map((n) => Math.max(1, Math.min(8, Number(n) || 1)));
   }
 
   if (state.tripId !== access.tripId) {
     state.tripId = access.tripId;
+    state.sessionId = '';
     state.status = 'idle';
     state.events = [];
   }
@@ -46,19 +44,86 @@
   save();
   render();
 
-  if (typeof els !== 'undefined' && els?.clearBtn) els.clearBtn.hidden = true;
+  if (typeof els !== 'undefined' && els?.clearBtn) {
+    els.clearBtn.hidden = false;
+    els.clearBtn.textContent = '新しい撮影チェック';
+  }
 
   let firestoreApi = null;
   let db = null;
   let collectionRef = null;
-  let unsubscribe = null;
+  let sessionRef = null;
+  let unsubscribeChecks = null;
+  let unsubscribeSession = null;
+  let ready = false;
+  let currentSession = null;
+  let remoteEventsCache = [];
+
+  function currentSessionEvents() {
+    if (!state.sessionId) return [];
+    return remoteEventsCache.filter((event) => event.sessionId === state.sessionId);
+  }
+
+  function mergeRemoteEvents() {
+    const remoteEvents = currentSessionEvents();
+    const remoteById = new Map(remoteEvents.map((event) => [event.eventId, event]));
+    const localOnly = state.events.filter((event) => (
+      event.sessionId === state.sessionId && !remoteById.has(event.eventId)
+    ));
+    state.events = sortEvents([...remoteEvents, ...localOnly]);
+    save();
+    render();
+  }
+
+  async function applySession(session) {
+    const previousStatus = state.status;
+    const previousSessionId = state.sessionId || '';
+
+    if (!session) {
+      state.sessionId = '';
+      state.status = 'idle';
+      state.events = [];
+      save();
+      render();
+      if (previousStatus === 'active') await stopScanner();
+      return;
+    }
+
+    const nextSessionId = String(session.sessionId || '');
+    const sessionChanged = nextSessionId && nextSessionId !== previousSessionId;
+    if (sessionChanged) {
+      state.sessionId = nextSessionId;
+      state.events = [];
+    }
+
+    state.classMode = session.classMode === 'numeric' ? 'numeric' : 'alpha';
+    state.classGroups = sanitizeSessionGroups(session.classGroups);
+    state.status = session.status === 'ended' ? 'ended' : 'active';
+    mergeRemoteEvents();
+
+    if (state.status === 'active') {
+      setNotice('Firestore共有・共同チェック中', '開始状態・対象班・撮影履歴を同じ旅行の撮影者全員で共有しています。');
+      if (previousStatus !== 'active' || sessionChanged || !scanner) {
+        cameraPaused = false;
+        render();
+        await startScanner();
+      }
+    } else {
+      setNotice('Firestore共有・チェック終了', 'この撮影チェックは終了しました。再開すると全端末に反映されます。');
+      cameraPaused = false;
+      render();
+      if (previousStatus === 'active') await stopScanner();
+    }
+  }
 
   async function uploadEvent(event) {
-    if (!firestoreApi || !db || !collectionRef) return;
+    if (!firestoreApi || !db || !collectionRef || !currentSession || currentSession.status !== 'active') return;
     if (!event || event.photographerId !== access.uid) return;
+    if (!state.sessionId || event.sessionId !== state.sessionId) return;
 
     const payload = {
       eventId: String(event.eventId),
+      sessionId: String(event.sessionId),
       groupCode: String(event.groupCode),
       photographerId: access.uid,
       photographerName: String(event.photographerName || access.displayName || access.email || '撮影者'),
@@ -73,7 +138,7 @@
       const local = state.events.find((item) => item.eventId === payload.eventId);
       if (local) local.syncStatus = 'synced';
       save();
-      setNotice('Firestore共有・複数端末同期', '同じ旅行の撮影履歴を複数カメラマン間でリアルタイム共有しています。');
+      setNotice('Firestore共有・共同チェック中', '開始状態・対象班・撮影履歴を同じ旅行の撮影者全員で共有しています。');
     } catch (error) {
       console.error('photo check sync failed', error);
       const local = state.events.find((item) => item.eventId === payload.eventId);
@@ -84,7 +149,7 @@
   }
 
   record = function syncedRecord(raw, source) {
-    if (state.status !== 'active' || scanLocked) return;
+    if (state.status !== 'active' || !state.sessionId || scanLocked) return;
     const code = norm(raw);
     const groups = new Set(configuredGroups());
     scanLocked = true;
@@ -98,7 +163,9 @@
 
     const now = Date.now();
     const recentOwn = [...state.events].reverse().find((event) => (
-      event.groupCode === code && event.photographerId === access.uid
+      event.sessionId === state.sessionId
+      && event.groupCode === code
+      && event.photographerId === access.uid
     ));
     if (recentOwn && now - new Date(recentOwn.capturedAt).getTime() < 5000) {
       setTimeout(() => { scanLocked = false; }, 700);
@@ -107,6 +174,7 @@
 
     const event = {
       eventId: id(),
+      sessionId: state.sessionId,
       groupCode: code,
       photographerId: access.uid,
       photographerName: state.photographerName || access.displayName || access.email || '撮影者',
@@ -118,13 +186,114 @@
     state.events.push(event);
     state.events = sortEvents(state.events);
     save();
-    const count = state.events.filter((item) => item.groupCode === code).length;
+    const count = state.events.filter((item) => item.sessionId === state.sessionId && item.groupCode === code).length;
     render();
     show('success', code, `撮影チェック ${count}回目`, `${event.photographerName}・${time(event.capturedAt)}`);
     try { navigator.vibrate?.(70); } catch {}
     uploadEvent(event);
     setTimeout(() => { scanLocked = false; }, 900);
   };
+
+  async function beginSharedSession() {
+    const name = els.photographerName.value.trim();
+    if (!name) {
+      alert('カメラマン名を入力してください');
+      return;
+    }
+    state.photographerName = name;
+    save();
+    if (!ready || !firestoreApi || !sessionRef) {
+      setNotice('Firestore接続中', '共有セッションの準備ができるまで少し待ってください。');
+      return;
+    }
+
+    try {
+      await firestoreApi.runTransaction(db, async (tx) => {
+        const snap = await tx.get(sessionRef);
+        const existing = snap.exists() ? snap.data() : null;
+        if (existing?.status === 'active') return;
+        tx.set(sessionRef, {
+          sessionId: id(),
+          status: 'active',
+          classMode: state.classMode === 'numeric' ? 'numeric' : 'alpha',
+          classGroups: sanitizeSessionGroups(state.classGroups),
+          startedAt: firestoreApi.serverTimestamp(),
+          startedBy: access.uid,
+          startedByName: name,
+          endedAt: null,
+          endedBy: null,
+        });
+      });
+    } catch (error) {
+      console.error('photo session start failed', error);
+      setNotice('共有チェックを開始できません', '通信状態またはFirestore権限を確認してください。');
+    }
+  }
+
+  async function endSharedSession() {
+    if (!ready || !firestoreApi || !sessionRef || !state.sessionId) return;
+    if (!confirm('撮影チェックを終了しますか？\n他の撮影者の端末も終了します。')) return;
+    try {
+      await firestoreApi.runTransaction(db, async (tx) => {
+        const snap = await tx.get(sessionRef);
+        if (!snap.exists()) return;
+        const data = snap.data();
+        if (data.sessionId !== state.sessionId || data.status !== 'active') return;
+        tx.update(sessionRef, {
+          status: 'ended',
+          endedAt: firestoreApi.serverTimestamp(),
+          endedBy: access.uid,
+        });
+      });
+    } catch (error) {
+      console.error('photo session end failed', error);
+      setNotice('共有チェックを終了できません', '通信状態またはFirestore権限を確認してください。');
+    }
+  }
+
+  async function resumeSharedSession() {
+    if (!ready || !firestoreApi || !sessionRef || !state.sessionId) return;
+    try {
+      await firestoreApi.runTransaction(db, async (tx) => {
+        const snap = await tx.get(sessionRef);
+        if (!snap.exists()) return;
+        const data = snap.data();
+        if (data.sessionId !== state.sessionId || data.status !== 'ended') return;
+        tx.update(sessionRef, {
+          status: 'active',
+          endedAt: null,
+          endedBy: null,
+        });
+      });
+    } catch (error) {
+      console.error('photo session resume failed', error);
+      setNotice('共有チェックを再開できません', '通信状態またはFirestore権限を確認してください。');
+    }
+  }
+
+  async function prepareNewSharedSession() {
+    if (state.status !== 'ended') return;
+    state.sessionId = '';
+    state.status = 'idle';
+    state.events = [];
+    save();
+    render();
+    setNotice('新しい共有チェックの準備', '対象クラス・班を設定して開始すると、全撮影者に共有されます。');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function intercept(button, handler) {
+    button?.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      handler();
+    }, { capture: true });
+  }
+
+  intercept(els?.startBtn, beginSharedSession);
+  intercept(els?.endBtn, endSharedSession);
+  intercept(els?.resumeBtn, resumeSharedSession);
+  intercept(els?.clearBtn, prepareNewSharedSession);
 
   async function boot() {
     try {
@@ -135,16 +304,18 @@
       firestoreApi = firestore;
       db = firestore.getFirestore(getApp());
       collectionRef = firestore.collection(db, 'qrTrips', access.tripId, 'photoChecks');
+      sessionRef = firestore.doc(db, 'qrTrips', access.tripId, 'photoSession', 'current');
 
-      setNotice('Firestore接続中', '同じ旅行の撮影履歴を読み込んでいます。');
+      setNotice('Firestore接続中', '共有セッションと撮影履歴を読み込んでいます。');
 
-      unsubscribe = firestore.onSnapshot(
+      unsubscribeChecks = firestore.onSnapshot(
         collectionRef,
         (snapshot) => {
-          const remoteEvents = snapshot.docs.map((snap) => {
+          remoteEventsCache = snapshot.docs.map((snap) => {
             const data = snap.data() || {};
             return {
               eventId: String(data.eventId || snap.id),
+              sessionId: String(data.sessionId || ''),
               groupCode: String(data.groupCode || ''),
               photographerId: String(data.photographerId || ''),
               photographerName: String(data.photographerName || ''),
@@ -153,8 +324,7 @@
               syncStatus: 'synced',
             };
           });
-          mergeRemoteEvents(remoteEvents);
-          setNotice('Firestore共有・複数端末同期', '同じ旅行の撮影履歴を複数カメラマン間でリアルタイム共有しています。');
+          mergeRemoteEvents();
         },
         (error) => {
           console.error('photo check listener failed', error);
@@ -162,8 +332,25 @@
         },
       );
 
-      const pending = state.events.filter((event) => event.photographerId === access.uid && ['pending', 'error'].includes(event.syncStatus));
-      pending.forEach((event) => uploadEvent(event));
+      unsubscribeSession = firestore.onSnapshot(
+        sessionRef,
+        async (snapshot) => {
+          currentSession = snapshot.exists() ? snapshot.data() : null;
+          ready = true;
+          await applySession(currentSession);
+          const pending = state.events.filter((event) => (
+            event.sessionId === state.sessionId
+            && event.photographerId === access.uid
+            && ['pending', 'error'].includes(event.syncStatus)
+          ));
+          pending.forEach((event) => uploadEvent(event));
+        },
+        (error) => {
+          console.error('photo session listener failed', error);
+          ready = false;
+          setNotice('共有セッション同期エラー', '開始・終了状態を共有できません。通信状態またはFirestore権限を確認してください。');
+        },
+      );
     } catch (error) {
       console.error('photo check sync init failed', error);
       setNotice('Firestore同期エラー・端末内保存', '共有機能を初期化できません。撮影記録はこの端末には保存されます。');
@@ -171,7 +358,8 @@
   }
 
   window.addEventListener('pagehide', () => {
-    try { unsubscribe?.(); } catch {}
+    try { unsubscribeChecks?.(); } catch {}
+    try { unsubscribeSession?.(); } catch {}
   });
 
   boot();
