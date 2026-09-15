@@ -11,8 +11,9 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import {
   doc,
-  getDoc,
+  getDocFromServer,
   getFirestore,
+  onSnapshot,
   serverTimestamp,
   setDoc,
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
@@ -33,6 +34,7 @@ const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: 'select_account' });
 let protectedAppLoaded = false;
+let membershipUnsubscribe = null;
 
 const pageScripts = {
   group: [
@@ -69,6 +71,11 @@ const pageRoles = {
 };
 
 try { await setPersistence(auth, browserLocalPersistence); } catch {}
+
+function stopMembershipWatch() {
+  try { membershipUnsubscribe?.(); } catch {}
+  membershipUnsubscribe = null;
+}
 
 function appendScript(src) {
   return new Promise((resolve, reject) => {
@@ -109,6 +116,7 @@ function authErrorMessage(error) {
 }
 
 function showLogin(message = '') {
+  stopMembershipWatch();
   document.querySelector('.auth-gate')?.remove();
   const gate = document.createElement('div');
   gate.className = 'auth-gate';
@@ -157,6 +165,7 @@ function showLogin(message = '') {
 }
 
 function showTripEntry(user, message = '') {
+  stopMembershipWatch();
   document.querySelector('.auth-gate')?.remove();
   const gate = document.createElement('div');
   gate.className = 'auth-gate';
@@ -201,6 +210,20 @@ async function submitJoinRequest(user, tripId) {
   });
 }
 
+function watchForApproval(user, tripId) {
+  stopMembershipWatch();
+  const memberRef = doc(db, 'qrTrips', tripId, 'members', user.uid);
+  membershipUnsubscribe = onSnapshot(memberRef, (snap) => {
+    if (!snap.exists()) return;
+    const data = snap.data() || {};
+    if (data.disabled === true) return;
+    stopMembershipWatch();
+    location.reload();
+  }, (error) => {
+    console.error('membership watch failed', error);
+  });
+}
+
 function showDenied(user, tripId, reason, canRequestAccess = false) {
   document.querySelector('.auth-gate')?.remove();
   const gate = document.createElement('div');
@@ -227,6 +250,7 @@ function showDenied(user, tripId, reason, canRequestAccess = false) {
       requestResult.hidden = false;
       requestResult.textContent = '参加申請を送りました。管理者の承認後に利用できます。';
       requestButton.textContent = '申請済み';
+      watchForApproval(user, tripId);
     } catch (error) {
       requestResult.hidden = false;
       requestResult.textContent = error?.code === 'permission-denied'
@@ -236,22 +260,25 @@ function showDenied(user, tripId, reason, canRequestAccess = false) {
     }
   });
   gate.querySelector('.auth-change-trip').addEventListener('click', () => {
+    stopMembershipWatch();
     try { localStorage.removeItem(TRIP_STORAGE_KEY); } catch {}
     const url = new URL(location.href);
     url.searchParams.delete('trip');
     location.href = url.toString();
   });
   gate.querySelector('.auth-signout').addEventListener('click', async () => {
+    stopMembershipWatch();
     try { localStorage.removeItem(TRIP_STORAGE_KEY); } catch {}
     await signOut(auth);
     location.reload();
   });
   document.body.appendChild(gate);
   document.documentElement.classList.remove('auth-pending');
+  if (canRequestAccess) watchForApproval(user, tripId);
 }
 
 async function readMembership(user, tripId) {
-  const snap = await getDoc(doc(db, 'qrTrips', tripId, 'members', user.uid));
+  const snap = await getDocFromServer(doc(db, 'qrTrips', tripId, 'members', user.uid));
   if (!snap.exists()) return null;
   const data = snap.data() || {};
   return {
@@ -263,6 +290,7 @@ async function readMembership(user, tripId) {
 }
 
 function showUserBar(user, access) {
+  stopMembershipWatch();
   document.querySelector('.auth-user-bar')?.remove();
   const bar = document.createElement('div');
   bar.className = 'auth-user-bar';
@@ -283,6 +311,7 @@ function showUserBar(user, access) {
 }
 
 onAuthStateChanged(auth, async (user) => {
+  stopMembershipWatch();
   document.querySelector('.auth-gate')?.remove();
   document.querySelector('.auth-user-bar')?.remove();
   if (!user) {
@@ -342,3 +371,5 @@ onAuthStateChanged(auth, async (user) => {
     showDenied(user, tripId, 'アプリの読み込みに失敗しました。再読み込みしてください。');
   }
 });
+
+window.addEventListener('pagehide', stopMembershipWatch);
