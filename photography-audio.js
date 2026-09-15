@@ -49,6 +49,7 @@ if (photoSoundToggleBtn) {
 });
 
 if (typeof record === 'function') {
+  window.__photoAudioWrapperInstalled = true;
   const originalRecord = record;
   record = function recordWithAudio(raw, source) {
     if (photoSoundEnabled) unlockPhotoAudio();
