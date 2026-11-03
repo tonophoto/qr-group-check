@@ -26,6 +26,7 @@ qrTrips/{qrTripId}/groupRounds/{roundId}
   note: string (<= 80)
   classMode: "alpha" | "numeric"
   classGroups: number[]  (1-14 or 1-10, each 1-8)
+  groupCodes: string[] (allowed group codes generated from classMode/classGroups)
   status: "active" | "ended"
   createdBy: googleUid
   createdAt: serverTimestamp
@@ -62,7 +63,7 @@ qrTrips/{qrTripId}/groupRounds/{roundId}/checks/{groupCode}
 2. QR namespace のみを開く最小限のRulesを別途レビュー。現在の `antidisc/firestore.rules` の `groupRounds` に残る一般的 `allow read, write` は **そのままでは不十分**。明示的に制限する。Firestore Rules は OR 評価のため、別 match を追加するだけで旧許可を打ち消せない。
 3. `groupControl/current` は QR teacher/admin のみ read/write。書込フィールド・型・更新者・時刻を検証し、現在roundがactiveの間に別roundを勝手に指せないこと、round参照先が合法なことを検証。
 4. `groupRounds/{roundId}` は必要な項目だけを作成可能、active→ended/ended→activeのみの状態遷移、その他改変を拒否。異旅行を拒否。
-5. `checks/{groupCode}` は active/current round に対する teacher/admin の **createのみ**、doc IDとcode一致、serverTimestamp、checkedBy==auth.uid、status checked を検証。更新・削除は不可。**クライアント側のみの班設定検証をRulesの代替としない。**
+5. `checks/{groupCode}` は active/current round に対する teacher/admin の **createのみ**、doc IDとcode一致、codeがround.groupCodesに含まれること、serverTimestamp、checkedBy==auth.uid、status checked を検証。更新・削除は不可。**クライアント側のみの班設定検証をRulesの代替としない。**
 6. `joinRequests` と `members` は既存の制約（申請者本人作成、QR管理者による承認、無効ユーザー拒否）を維持。
 7. Emulatorで「別旅行、未登録・disabled、写真ロール、本人でないcheckedBy、偽のチェック回、重複・同時押し、終了後、offline、端末A/B反映」を検証。GitHub Actions自動実行なし。
 8. QR Hosting siteID `school-trip-chat-qr`、Auth許可ドメイン、配信対象差分と切戻し先を**実環境の読取**で確認。旧Versionには .git ファイル一覧があったため **旧Versionの単純復元を禁止**。
