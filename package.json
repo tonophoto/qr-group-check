@@ -1,0 +1,10 @@
+{
+  "name": "qr-group-check",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build:qr": "node scripts/build-qr-public.mjs",
+    "test:qr:static": "node --test scripts/qr-public-and-sync.test.mjs"
+  }
+}
