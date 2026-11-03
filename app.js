@@ -499,6 +499,22 @@ els.endBtn.addEventListener('click', async () => {
   }
 });
 
+document.getElementById('resumeBtn')?.addEventListener('click', async () => {
+  if (!sharedReady || !groupSync || state.status !== 'ended') return;
+  try {
+    await groupSync.setStatus(state.roundId, 'active');
+  } catch (error) {
+    console.error('Shared QR round resume failed:', error);
+    alert('チェック回を再開できませんでした。');
+  }
+});
+
+const memberAdminLink = document.getElementById('memberAdminLink');
+if (memberAdminLink && window.QRAccess?.role === 'admin') {
+  memberAdminLink.hidden = false;
+  memberAdminLink.href = './members.html?trip=' + encodeURIComponent(window.QRAccess.tripId);
+}
+
 els.newRoundBtn.addEventListener('click', () => {
   if (!sharedReady || state.status !== 'ended') return;
   newRoundSetup = true;
