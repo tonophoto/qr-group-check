@@ -39,7 +39,8 @@ let membershipUnsubscribe = null;
 const pageScripts = {
   group: [
     'https://unpkg.com/html5-qrcode',
-    './app.js?v=20260913-4',
+    './group-sync.js?v=20261103-1',
+    './app.js?v=20261103-1',
     './group-audio-fix.js?v=20260913-1',
     './photography-effects.js?v=20260913-6',
     './group-effects.js?v=20260913-1',
