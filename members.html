@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ja" class="auth-pending" data-auth-page="members">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QR班チェック 参加者管理</title>
+  <link rel="stylesheet" href="./auth-gate.css?v=20260913-2">
+  <style>
+    body{margin:0;padding:20px 14px 100px;background:#f1f5f9;color:#0f172a;font-family:system-ui,sans-serif}
+    main{max-width:800px;margin:auto}section{background:white;border-radius:12px;padding:16px;margin:16px 0}
+    h1{font-size:23px}h2{font-size:18px}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #e2e8f0;flex-wrap:wrap}
+    button,a.link{background:#0f766e;color:white;border:0;border-radius:8px;padding:10px 12px;cursor:pointer;text-decoration:none}
+    button:disabled{opacity:.6;cursor:wait}.muted{color:#475569;font-size:13px}.error{color:#b91c1c}
+    .controls{display:flex;gap:8px;align-items:center}.name{font-weight:600;overflow-wrap:anywhere}
+  </style>
+  <script type="module" src="./auth-gate.js?v=20261103-1"></script>
+</head>
+<body>
+  <main>
+    <h1>QR班チェック 参加者管理</h1>
+    <p class="muted">参加申請と承認だけを管理します。写真管理機能にはアクセスしません。</p>
+    <a class="link" href="./index.html">班チェックに戻る</a>
+    <p id="memberStatus" role="status" aria-live="polite">認証・同期確認中です。</p>
+    <section><h2>参加申請</h2><div id="pendingRequests">読込中…</div></section>
+    <section><h2>登録済み参加者</h2><div id="approvedMembers">読込中…</div></section>
+  </main>
+</body>
+</html>
