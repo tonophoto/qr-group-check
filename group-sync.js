@@ -93,6 +93,11 @@
           safeGroups.length > (classMode === 'alpha' ? 14 : 10) ||
           safeGroups.some(n => !Number.isInteger(n) || n < 1 || n > 8)) throw new Error('invalid-group-setup');
         if (String(title).length > 60 || String(note).length > 80) throw new Error('invalid-round-details');
+        const groupCodes = [];
+        safeGroups.forEach((count, index) => {
+          const prefix = classMode === 'numeric' ? String(index + 1) : String.fromCharCode(65 + index);
+          for (let number = 1; number <= count; number += 1) groupCodes.push(prefix + '-' + number);
+        });
         const next = fs.doc(fs.collection(db, 'qrTrips', tripId, 'groupRounds'));
         await fs.runTransaction(db, async tx => {
           const pointer = await tx.get(controlRef);
@@ -103,7 +108,7 @@
             if (!prev.exists() || prev.data().status !== 'ended') throw new Error('previous-round-not-ended');
           }
           tx.set(next, {
-            title: String(title), note: String(note), classMode, classGroups: safeGroups,
+            title: String(title), note: String(note), classMode, classGroups: safeGroups, groupCodes,
             status: 'active', createdBy: access.uid, createdAt: fs.serverTimestamp(), endedAt: null
           });
           tx.set(controlRef, { roundId: next.id, updatedBy: access.uid, updatedAt: fs.serverTimestamp() });
