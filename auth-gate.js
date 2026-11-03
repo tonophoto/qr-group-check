@@ -46,6 +46,7 @@ const pageScripts = {
     './group-effects.js?v=20260913-1',
     './status.js?v=20260913-4',
   ],
+  members: ['./members.js?v=20261103-1'],
   photography: [
     'https://unpkg.com/html5-qrcode',
     './photography.js?v=20260913-3',
@@ -69,6 +70,7 @@ const pageRoles = {
   group: new Set(['teacher', 'admin']),
   photography: new Set(['photographer', 'admin']),
   admin: new Set(['admin']),
+  members: new Set(['admin']),
 };
 
 try { await setPersistence(auth, browserLocalPersistence); } catch {}
