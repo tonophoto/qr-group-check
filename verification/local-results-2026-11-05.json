@@ -1,0 +1,134 @@
+{
+  "time": "2026-11-05T10:16:26.358Z",
+  "node": "v24.22.1",
+  "sdk": "12.11.0",
+  "passed": [
+    "Google teacher/admin access; unregistered/disabled/photographer/other-trip/service-admin/password/signed-out isolation",
+    "two independent SDK clients synchronize; simultaneous same-code transaction yields one new / one duplicate / one record",
+    "Rules enforce actor/time/code/allowlist/current-round/create-only and deny forged control/config",
+    "request -> atomic approval -> entry; rejection/disable/self-promotion and cross-member privacy",
+    "photography, schools/**, chat/VoIP/admin paths and Storage remain denied",
+    "actual SDK fromCache/offline failure and same-round reconnect recover without stale success",
+    "scan paused after server pointer read is rejected when another client ends round before transaction",
+    "end/resume/next-round isolation and max 14x8 groupCodes within Rules limits",
+    "disposed identity/trip session cannot write or receive old records",
+    "real Chromium + CDN SDK 10.14.1: Google-provider Emulator login, generated camera start, A->B update, no success before register ACK",
+    "real browser simultaneous check new/duplicate, next-round button regression, remote resume, next round clears prior checks and starts scanner",
+    "browser offline hides old checks and disables input; authenticated reconnect reloads cleanly",
+    "real members UI request -> atomic approval -> automatic entry; reject and disable revoke active view",
+    "initial Firestore authorization failure keeps start disabled and checked records empty",
+    "teacher members-page denial; logout/account/trip switch disposes old scripts and reveals no prior-trip records"
+  ],
+  "browser": true,
+  "browserEvidence": {
+    "time": "2026-11-05T10:16:25.881Z",
+    "browser": "149.0.7827.55",
+    "sdk": "10.14.1",
+    "externalRequestsSent": 0,
+    "rejectedUnexpectedRequests": [],
+    "interceptedProbes": 1,
+    "pageErrors": [],
+    "mediaTeardownWarnings": [],
+    "loadedScripts": [
+      "/app.js",
+      "/auth-gate.js",
+      "/group-audio-fix.js",
+      "/group-effects.js",
+      "/group-sync.js",
+      "/members.js",
+      "/photography-effects.js",
+      "/sdk/firebase-app.js",
+      "/sdk/firebase-auth.js",
+      "/sdk/firebase-firestore.js",
+      "/sdk/html5-qrcode.min.js",
+      "/status.js"
+    ],
+    "camera": "Chrome-generated video only; manual QR inputs; no hardware acceptance"
+  },
+  "sourceBase": "16fda7abfbfe690e5113051feb69eb26ebd9368b",
+  "staticTests": {
+    "passed": 4,
+    "failed": 0
+  },
+  "runtimeTests": {
+    "passed": 5,
+    "failed": 0,
+    "baselinePassed": 1,
+    "baselineFailed": 4
+  },
+  "publicAssets": [
+    {
+      "file": "app.js",
+      "bytes": 24397,
+      "sha256": "27f7500b53eca5c582e578b509ea5379211fdc048a23b08bcc1201c7602a3df9"
+    },
+    {
+      "file": "auth-gate.css",
+      "bytes": 1625,
+      "sha256": "0014be16da169490d9611b580002a1e03b499af3d44a3a9d044c4152d7229180"
+    },
+    {
+      "file": "auth-gate.js",
+      "bytes": 16450,
+      "sha256": "e9e0c81386739124e3b4e845a90e606b35b141ba270f49f5a74ed610b707ac16"
+    },
+    {
+      "file": "group-audio-fix.js",
+      "bytes": 1372,
+      "sha256": "df708fa4960007225628f3680030c1b277f3a7ce593b3fc86ba594bb1f8084cb"
+    },
+    {
+      "file": "group-effects.js",
+      "bytes": 2321,
+      "sha256": "a86cfb423451b5c61c71a2f7c5a9e6ae5159e2e19e2afd57749564df43f0d345"
+    },
+    {
+      "file": "group-sync.js",
+      "bytes": 9089,
+      "sha256": "68319adf40d8a5b2527812dbda88fe57e7ba2f3d495257a06bad8db2e43fcf0b"
+    },
+    {
+      "file": "index.html",
+      "bytes": 7571,
+      "sha256": "c649d676a7875857f74a028b5120a21c51ae318c02ccce16fa57400803c9bf38"
+    },
+    {
+      "file": "members.html",
+      "bytes": 1721,
+      "sha256": "d1c2378ff4d3033b807d8d7b8574de087870c6fd8c5d4b80f07c7eb8fa164901"
+    },
+    {
+      "file": "members.js",
+      "bytes": 7389,
+      "sha256": "6d81007eb4a5869f27e7dff822e2c781beb2bdf04579ad69b2415ebe0150d357"
+    },
+    {
+      "file": "photography-effects.css",
+      "bytes": 6402,
+      "sha256": "a9fc10a0296797cd5a6312769c6025ad65d1c206f4179ae37c09c6d0f098288e"
+    },
+    {
+      "file": "photography-effects.js",
+      "bytes": 10409,
+      "sha256": "b933f7718a48628e1fd2bc11dcbaa1750a83de07b9454998dd0ec2fe7b5b95eb"
+    },
+    {
+      "file": "status.js",
+      "bytes": 2201,
+      "sha256": "b9afb291ca8fd737e7ac2ebd875b4ecaf191a2461cd25e032e40efa4fd7ec0e3"
+    },
+    {
+      "file": "style.css",
+      "bytes": 8327,
+      "sha256": "c358955a3188c861045c511108da5118a35cd5beb335ef4a76905f7002de362e"
+    }
+  ],
+  "rulesSha256": "fc4c2a61e5020f4e3732947122778730ff7a65026975b20fd19e01488fd5eeed",
+  "storageRulesSha256": "0745e19af8925d8db6d3345251ec34a9ff280f75e6df8f70f22cfe46682c8bd0",
+  "remoteChanges": {
+    "production": false,
+    "push": false,
+    "actionsTriggered": false,
+    "prEdited": false
+  }
+}

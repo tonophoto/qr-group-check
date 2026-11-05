@@ -35,16 +35,24 @@ const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: 'select_account' });
 let protectedAppLoaded = false;
 let membershipUnsubscribe = null;
+let accessEpoch = 0;
+const serverConfirmed = snap => !snap.metadata.fromCache && !snap.metadata.hasPendingWrites;
+function clearProtectedAccess() {
+  window.QRAccess = null;
+  window.dispatchEvent(new Event('qr-access-ended'));
+}
 
 const pageScripts = {
   group: [
     'https://unpkg.com/html5-qrcode',
-    './app.js?v=20260913-4',
+    './group-sync.js?v=20261103-1',
+    './app.js?v=20261103-1',
     './group-audio-fix.js?v=20260913-1',
     './photography-effects.js?v=20260913-6',
     './group-effects.js?v=20260913-1',
     './status.js?v=20260913-4',
   ],
+  members: ['./members.js?v=20261103-1'],
   photography: [
     'https://unpkg.com/html5-qrcode',
     './photography.js?v=20260913-3',
@@ -68,6 +76,7 @@ const pageRoles = {
   group: new Set(['teacher', 'admin']),
   photography: new Set(['photographer', 'admin']),
   admin: new Set(['admin']),
+  members: new Set(['admin']),
 };
 
 try { await setPersistence(auth, browserLocalPersistence); } catch {}
@@ -87,12 +96,15 @@ function appendScript(src) {
   });
 }
 
-async function loadProtectedApp() {
+async function loadProtectedApp(epoch) {
   if (protectedAppLoaded) return;
   protectedAppLoaded = true;
   const page = document.documentElement.dataset.authPage || 'group';
   const scripts = pageScripts[page] || pageScripts.group;
-  for (const src of scripts) await appendScript(src);
+  for (const src of scripts) {
+    if (epoch !== accessEpoch) throw new Error('qr-access-changed');
+    await appendScript(src);
+  }
 }
 
 function currentTripId() {
@@ -213,10 +225,11 @@ async function submitJoinRequest(user, tripId) {
 function watchForApproval(user, tripId) {
   stopMembershipWatch();
   const memberRef = doc(db, 'qrTrips', tripId, 'members', user.uid);
-  membershipUnsubscribe = onSnapshot(memberRef, (snap) => {
-    if (!snap.exists()) return;
+  const epoch = accessEpoch;
+  membershipUnsubscribe = onSnapshot(memberRef, { includeMetadataChanges: true }, (snap) => {
+    if (epoch !== accessEpoch || !serverConfirmed(snap) || !snap.exists()) return;
     const data = snap.data() || {};
-    if (data.disabled === true) return;
+    if (data.disabled === true || !['teacher', 'admin'].includes(data.role)) return;
     stopMembershipWatch();
     location.reload();
   }, (error) => {
@@ -289,6 +302,38 @@ async function readMembership(user, tripId) {
   };
 }
 
+function watchActiveMembership(user, tripId, access, epoch) {
+  stopMembershipWatch();
+  let seenServer = false;
+  let paused = false;
+  membershipUnsubscribe = onSnapshot(doc(db, 'qrTrips', tripId, 'members', user.uid),
+    { includeMetadataChanges: true }, snap => {
+      if (epoch !== accessEpoch) return;
+      if (!serverConfirmed(snap)) {
+        if (seenServer) {
+          paused = true;
+          clearProtectedAccess();
+          document.documentElement.classList.add('auth-pending');
+        }
+        return;
+      }
+      seenServer = true;
+      const data = snap.exists() ? snap.data() : null;
+      if (!data || data.disabled === true || data.role !== access.role) {
+        clearProtectedAccess();
+        showDenied(user, tripId, '参加権限が変更されました。登録状態を確認してください。');
+        document.documentElement.classList.remove('auth-pending');
+      } else if (paused) {
+        location.reload();
+      }
+    }, () => {
+      if (epoch !== accessEpoch) return;
+      clearProtectedAccess();
+      showDenied(user, tripId, '参加権限を確認できません。通信と登録状態を確認してください。');
+      document.documentElement.classList.remove('auth-pending');
+    });
+}
+
 function showUserBar(user, access) {
   stopMembershipWatch();
   document.querySelector('.auth-user-bar')?.remove();
@@ -298,12 +343,14 @@ function showUserBar(user, access) {
   bar.innerHTML = `<span></span><button class="auth-trip-change" type="button">旅行変更</button><button class="auth-logout" type="button">ログアウト</button>`;
   bar.querySelector('span').textContent = `${name} / ${access.tripId}`;
   bar.querySelector('.auth-trip-change').addEventListener('click', () => {
+    clearProtectedAccess();
     try { localStorage.removeItem(TRIP_STORAGE_KEY); } catch {}
     const url = new URL(location.href);
     url.searchParams.delete('trip');
     location.href = url.toString();
   });
   bar.querySelector('.auth-logout').addEventListener('click', async () => {
+    clearProtectedAccess();
     await signOut(auth);
     location.reload();
   });
@@ -311,7 +358,11 @@ function showUserBar(user, access) {
 }
 
 onAuthStateChanged(auth, async (user) => {
+  const epoch = ++accessEpoch;
+  clearProtectedAccess();
   stopMembershipWatch();
+  document.documentElement.classList.add('auth-pending');
+  if (protectedAppLoaded) { location.reload(); return; }
   document.querySelector('.auth-gate')?.remove();
   document.querySelector('.auth-user-bar')?.remove();
   if (!user) {
@@ -328,7 +379,9 @@ onAuthStateChanged(auth, async (user) => {
   let membership;
   try {
     membership = await readMembership(user, tripId);
+    if (epoch !== accessEpoch) return;
   } catch (error) {
+    if (epoch !== accessEpoch) return;
     const code = error?.code || '';
     const reason = code === 'permission-denied'
       ? '参加者確認の権限設定がまだ反映されていません。管理者に連絡してください。'
@@ -364,12 +417,16 @@ onAuthStateChanged(auth, async (user) => {
   window.QRAccess = Object.freeze(access);
 
   try {
-    await loadProtectedApp();
+    await loadProtectedApp(epoch);
+    if (epoch !== accessEpoch) return;
     document.documentElement.classList.remove('auth-pending');
     showUserBar(user, access);
+    watchActiveMembership(user, tripId, access, epoch);
   } catch {
+    if (epoch !== accessEpoch) return;
+    clearProtectedAccess();
     showDenied(user, tripId, 'アプリの読み込みに失敗しました。再読み込みしてください。');
   }
 });
 
-window.addEventListener('pagehide', stopMembershipWatch);
+window.addEventListener('pagehide', () => { accessEpoch += 1; clearProtectedAccess(); stopMembershipWatch(); });

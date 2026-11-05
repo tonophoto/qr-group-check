@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="./style.css?v=20260913-4" />
   <link rel="stylesheet" href="./photography-effects.css?v=20260913-3" />
   <link rel="stylesheet" href="./auth-gate.css?v=20260913-2" />
-  <script type="module" src="./auth-gate.js?v=20260914-2"></script>
+  <script type="module" src="./auth-gate.js?v=20261103-1"></script>
 </head>
 <body>
   <main class="app-shell">
@@ -20,9 +20,10 @@
       <div id="sessionBadge" class="badge badge-idle">未開始</div>
     </header>
 
-    <section class="card" style="display:flex;gap:10px;align-items:center;justify-content:space-between">
-      <strong>モード</strong>
-      <a href="./photography.html" class="btn btn-secondary" style="text-decoration:none;text-align:center">撮影チェック</a>
+    <section class="card" aria-live="polite">
+      <strong>共有チェック</strong>
+      <p id="sharedSyncStatus" class="muted">サーバーの同期確認中です。</p>
+      <a id="memberAdminLink" href="./members.html" class="btn btn-secondary" hidden>参加申請・承認</a>
     </section>
 
     <section id="setupCard" class="card">
@@ -82,9 +83,9 @@
       <h2>今回のチェック回は終了しました</h2>
       <p id="endedSummary" class="ended-summary"></p>
       <div class="ended-actions">
-        <button id="resumeBtn" class="btn btn-secondary" onclick="(()=>{try{const k='qr-group-check-state-v2';const s=JSON.parse(localStorage.getItem(k)||'null');if(!s||s.status!=='ended')return;s.status='active';s.endedAt=null;localStorage.setItem(k,JSON.stringify(s));location.reload();}catch(e){alert('再開できませんでした');}})()">終了したチェック回を再開</button>
+        <button id="resumeBtn" class="btn btn-secondary">終了したチェック回を再開</button>
         <button id="newRoundBtn" class="btn btn-primary">次のチェック回を始める</button>
-        <button id="resetBtn" class="btn btn-ghost">記録を消去</button>
+        <button id="resetBtn" class="btn btn-ghost">記録削除について</button>
       </div>
     </section>
 

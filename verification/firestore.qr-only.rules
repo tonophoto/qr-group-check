@@ -1,0 +1,154 @@
+// Emulator-only QR candidate. Never deploy from this test config.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function googleUser() {
+      return request.auth != null && request.auth.token.firebase.sign_in_provider == 'google.com'
+        && request.auth.token.email_verified == true;
+    }
+    function memberPath(tripId, uid) {
+      return /databases/$(database)/documents/qrTrips/$(tripId)/members/$(uid);
+    }
+    function tripActive(tripId) {
+      return exists(/databases/$(database)/documents/qrTrips/$(tripId))
+        && get(/databases/$(database)/documents/qrTrips/$(tripId)).data.status == 'active';
+    }
+    function staff(tripId) {
+      return googleUser() && tripActive(tripId)
+        && exists(memberPath(tripId, request.auth.uid))
+        && get(memberPath(tripId, request.auth.uid)).data.disabled == false
+        && get(memberPath(tripId, request.auth.uid)).data.role in ['teacher', 'admin'];
+    }
+    function admin(tripId) {
+      return staff(tripId) && get(memberPath(tripId, request.auth.uid)).data.role == 'admin';
+    }
+    function pointer(tripId) {
+      return /databases/$(database)/documents/qrTrips/$(tripId)/groupControl/current;
+    }
+    function round(tripId, roundId) {
+      return /databases/$(database)/documents/qrTrips/$(tripId)/groupRounds/$(roundId);
+    }
+    function requestPath(tripId, uid) {
+      return /databases/$(database)/documents/qrTrips/$(tripId)/joinRequests/$(uid);
+    }
+    function validMember(data) {
+      return data.keys().hasAll(['role', 'displayName', 'email', 'disabled'])
+        && data.keys().hasOnly(['role', 'displayName', 'email', 'disabled'])
+        && data.role in ['teacher', 'admin'] && data.displayName is string
+        && data.displayName.size() <= 200 && data.email is string && data.email.size() <= 320
+        && data.disabled is bool;
+    }
+    function validRequest(data, uid) {
+      return data.keys().hasAll(['uid', 'displayName', 'email', 'createdAt'])
+        && data.keys().hasOnly(['uid', 'displayName', 'email', 'createdAt'])
+        && data.uid == uid && uid == request.auth.uid
+        && data.displayName is string && data.displayName.size() <= 200
+        && data.email == request.auth.token.email && data.createdAt == request.time;
+    }
+    function validCount(groups, i) {
+      return groups.size() <= i || (groups[i] is int && groups[i] >= 1 && groups[i] <= 8);
+    }
+    function validSetup(data) {
+      return data.classMode in ['alpha', 'numeric'] && data.classGroups is list
+        && data.classGroups.size() > 0 && data.classGroups.size() <= (data.classMode == 'alpha' ? 14 : 10)
+        && validCount(data.classGroups, 0) && validCount(data.classGroups, 1) && validCount(data.classGroups, 2) && validCount(data.classGroups, 3) && validCount(data.classGroups, 4) && validCount(data.classGroups, 5) && validCount(data.classGroups, 6) && validCount(data.classGroups, 7) && validCount(data.classGroups, 8) && validCount(data.classGroups, 9) && validCount(data.classGroups, 10) && validCount(data.classGroups, 11) && validCount(data.classGroups, 12) && validCount(data.classGroups, 13)
+        && data.groupCodes.size() > 0 && data.groupCodes.size() <= 112
+        && data.groupCodes.toSet().size() == data.groupCodes.size();
+    }
+    function configuredCode(data, code) {
+      let parts = code.split('-');
+      let indexes = {'A':0,'B':1,'C':2,'D':3,'E':4,'F':5,'G':6,'H':7,'I':8,'J':9,'K':10,'L':11,'M':12,'N':13};
+      let index = data.classMode == 'alpha' ? indexes.get(parts[0], -1) : int(parts[0])-1;
+      return code.matches(data.classMode == 'alpha' ? '^[A-N]-[1-8]$' : '^([1-9]|10)-[1-8]$')
+        && index >= 0 && index < data.classGroups.size()
+        && int(parts[1]) <= data.classGroups[index];
+    }
+    function validRound(data) {
+      return data.keys().hasAll(['title','note','classMode','classGroups','groupCodes','status','createdBy','createdAt','endedAt'])
+        && data.keys().hasOnly(['title','note','classMode','classGroups','groupCodes','status','createdBy','createdAt','endedAt'])
+        && data.title is string && data.title.size() <= 60 && data.note is string && data.note.size() <= 80
+        && data.groupCodes is list && validSetup(data)
+        && data.status == 'active' && data.createdBy == request.auth.uid
+        && data.createdAt == request.time && data.endedAt == null;
+    }
+    function validPointer(tripId) {
+      let data = request.resource.data;
+      return data.keys().hasAll(['roundId','updatedBy','updatedAt'])
+        && data.keys().hasOnly(['roundId','updatedBy','updatedAt'])
+        && data.roundId is string && data.roundId.matches('^[a-zA-Z0-9_-]{1,120}$')
+        && data.updatedBy == request.auth.uid && data.updatedAt == request.time
+        && !exists(round(tripId, data.roundId))
+        && getAfter(round(tripId, data.roundId)).data.status == 'active'
+        && getAfter(round(tripId, data.roundId)).data.createdBy == request.auth.uid
+        && getAfter(round(tripId, data.roundId)).data.createdAt == request.time;
+    }
+    match /qrServiceAdmins/{uid} {
+      // This self-read does not grant cross-trip privileges or client provisioning.
+      allow get: if googleUser() && uid == request.auth.uid;
+      allow list, write: if false;
+    }
+    match /qrTrips/{tripId} {
+      allow get: if staff(tripId);
+      allow list, write: if false;
+      match /members/{uid} {
+        allow get: if googleUser() && (uid == request.auth.uid || admin(tripId));
+        allow list: if admin(tripId);
+        allow create: if admin(tripId) && uid != request.auth.uid && validMember(request.resource.data)
+          && exists(requestPath(tripId, uid)) && !existsAfter(requestPath(tripId, uid))
+          && request.resource.data.email == get(requestPath(tripId, uid)).data.email
+          && request.resource.data.displayName == get(requestPath(tripId, uid)).data.displayName
+          && request.resource.data.disabled == false;
+        allow update: if admin(tripId) && uid != request.auth.uid && validMember(request.resource.data)
+          && request.resource.data.email == resource.data.email
+          && request.resource.data.displayName == resource.data.displayName;
+        allow delete: if false;
+      }
+      match /joinRequests/{uid} {
+        allow get: if googleUser() && (uid == request.auth.uid || admin(tripId));
+        allow list: if admin(tripId);
+        allow create: if googleUser() && tripActive(tripId) && !exists(memberPath(tripId, request.auth.uid))
+          && validRequest(request.resource.data, uid);
+        allow update: if false;
+        allow delete: if admin(tripId);
+      }
+      match /groupControl/{controlId} {
+        allow get: if controlId == 'current' && staff(tripId);
+        allow create: if controlId == 'current' && staff(tripId) && validPointer(tripId);
+        allow update: if controlId == 'current' && staff(tripId) && validPointer(tripId)
+          && request.resource.data.roundId != resource.data.roundId
+          && get(round(tripId, resource.data.roundId)).data.status == 'ended';
+        allow delete: if false;
+      }
+      match /groupRounds/{roundId} {
+        allow read: if staff(tripId);
+        allow create: if staff(tripId) && validRound(request.resource.data)
+          && getAfter(pointer(tripId)).data.roundId == roundId
+          && getAfter(pointer(tripId)).data.updatedBy == request.auth.uid
+          && getAfter(pointer(tripId)).data.updatedAt == request.time;
+        allow update: if staff(tripId) && get(pointer(tripId)).data.roundId == roundId
+          && getAfter(pointer(tripId)).data.roundId == roundId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','endedAt'])
+          && ((resource.data.status == 'active' && request.resource.data.status == 'ended'
+              && request.resource.data.endedAt == request.time)
+            || (resource.data.status == 'ended' && request.resource.data.status == 'active'
+              && request.resource.data.endedAt == null));
+        allow delete: if false;
+        match /checks/{code} {
+          allow read: if staff(tripId);
+          allow create: if staff(tripId) && get(pointer(tripId)).data.roundId == roundId
+            && getAfter(pointer(tripId)).data.roundId == roundId
+            && get(round(tripId, roundId)).data.status == 'active'
+            && getAfter(round(tripId, roundId)).data.status == 'active'
+            && request.resource.data.keys().hasAll(['code','status','checkedBy','checkedAt'])
+            && request.resource.data.keys().hasOnly(['code','status','checkedBy','checkedAt'])
+            && request.resource.data.code == code && code in get(round(tripId, roundId)).data.groupCodes
+            && configuredCode(get(round(tripId, roundId)).data, code)
+            && request.resource.data.status == 'checked' && request.resource.data.checkedBy == request.auth.uid
+            && request.resource.data.checkedAt == request.time;
+          allow update, delete: if false;
+        }
+      }
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

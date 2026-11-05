@@ -44,12 +44,20 @@ const els = {
   resultMessage: document.getElementById('resultMessage'),
 };
 
-let state = loadState();
+let state = defaultState(); // Shared round state is server-authoritative; never restore old device-only results.
 let scanner = null;
 let overlayTimer = null;
 let scanLocked = false;
 let cameraPaused = false;
 let audioContext = null;
+let groupSync = null;
+let sharedReady = false;
+let newRoundSetup = '';
+let roundActionPending = false;
+let viewRevision = 0;
+let accessEnded = false;
+let scannerRevision = 0;
+let scannerStartPromise = null;
 
 function defaultState() {
   return {
@@ -90,7 +98,8 @@ function loadState() {
 }
 
 function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  // Setup fields may be edited locally; checked groups never become device-local authority.
+  // The legacy localStorage key is intentionally not written.
 }
 
 function classLabel(index) {
@@ -209,6 +218,11 @@ function render() {
   const active = state.status === 'active';
   const ended = state.status === 'ended';
 
+  els.startBtn.disabled = !groupSync || !sharedReady || roundActionPending || state.status !== 'idle';
+  els.manualAddBtn.disabled = !sharedReady || !active;
+  els.endBtn.disabled = !sharedReady || roundActionPending;
+  document.getElementById('resumeBtn').disabled = !sharedReady || roundActionPending;
+  els.newRoundBtn.disabled = !sharedReady || roundActionPending;
   els.setupCard.hidden = active || ended;
   els.activeControls.hidden = !active;
   els.roundInfoCard.hidden = !active;
@@ -312,17 +326,24 @@ async function startScanner() {
     return;
   }
   if (scanner) return;
-  scanner = new Html5Qrcode('reader');
+  const candidate = new Html5Qrcode('reader');
+  scanner = candidate;
+  const thisRevision = ++scannerRevision;
   try {
-    await scanner.start(
+    scannerStartPromise = candidate.start(
       { facingMode: 'environment' },
       { fps: 10, qrbox: { width: 240, height: 240 }, aspectRatio: 1.0 },
       (decodedText) => handleCode(decodedText, true),
       () => {}
     );
+    await scannerStartPromise;
+    if (scanner !== candidate || thisRevision !== scannerRevision || accessEnded) {
+      return; // stopScanner owns cleanup while startup is in flight.
+    }
     cameraPaused = false;
     render();
   } catch {
+    if (scanner !== candidate || thisRevision !== scannerRevision) return;
     scanner = null;
     cameraPaused = true;
     els.scanHint.textContent = 'カメラを起動できません。権限を確認してください';
@@ -344,12 +365,17 @@ function forceStopVideoTracks() {
 
 async function stopScanner() {
   const activeScanner = scanner;
+  const pendingStart = scannerStartPromise;
+  scannerStartPromise = null;
+  const thisRevision = ++scannerRevision;
   scanner = null;
-  forceStopVideoTracks();
   if (activeScanner) {
+    document.querySelectorAll('#reader video').forEach(video => { video.onabort = null; video.onerror = null; });
+    try { await pendingStart; } catch {}
     try { await activeScanner.stop(); } catch {}
     try { await activeScanner.clear(); } catch {}
   }
+  if (thisRevision !== scannerRevision) return;
   forceStopVideoTracks();
   document.getElementById('reader').innerHTML = '';
 }
@@ -368,8 +394,8 @@ function showResult(type, code, message) {
   }, type === 'success' ? 2100 : 1500);
 }
 
-function handleCode(raw, fromCamera = false) {
-  if (state.status !== 'active' || scanLocked) return;
+async function handleCode(raw, fromCamera = false) {
+  if (state.status !== 'active' || scanLocked || !sharedReady || !groupSync) return;
   if (fromCamera && cameraPaused) return;
 
   const code = normalizeQr(raw);
@@ -390,19 +416,26 @@ function handleCode(raw, fromCamera = false) {
     return;
   }
 
-  if (state.checks.some((item) => item.code === code)) {
-    showResult('duplicate', code, 'チェック済みです');
-    feedback('duplicate');
-    setTimeout(() => { scanLocked = false; }, 900);
-    return;
+  const roundId = state.roundId;
+  const thisView = viewRevision;
+  try {
+    const result = await groupSync.register(state.roundId, code);
+    if (accessEnded || state.roundId !== roundId || state.status !== 'active') return;
+    if (result === 'duplicate') {
+      showResult('duplicate', code, '別の端末ですでにチェック済みです');
+      feedback('duplicate');
+    } else {
+      showResult('success', code, '共有記録に保存しました！');
+      feedback('success');
+    }
+  } catch (error) {
+    if (accessEnded || state.roundId !== roundId || thisView !== viewRevision) return;
+    console.error('Shared QR check failed:', error);
+    showResult('error', code, '記録できませんでした。通信と権限を確認してください');
+    feedback('error');
+  } finally {
+    setTimeout(() => { scanLocked = false; }, 700);
   }
-
-  state.checks.push({ code, checkedAt: new Date().toISOString() });
-  saveState();
-  render();
-  showResult('success', code, 'チェックできました！');
-  feedback('success');
-  setTimeout(() => { scanLocked = false; }, 700);
 }
 
 els.classMode.addEventListener('change', () => {
@@ -441,14 +474,23 @@ els.classMinusBtn.addEventListener('click', () => {
 
 els.startBtn.addEventListener('click', async () => {
   unlockAudio();
-  state.status = 'active';
-  state.startedAt = new Date().toISOString();
-  state.endedAt = null;
-  state.checks = [];
-  cameraPaused = false;
-  saveState();
+  if (!groupSync || !sharedReady || state.status !== 'idle') return;
+  roundActionPending = true;
   render();
-  await startScanner();
+  try {
+    await groupSync.start({
+      title: state.roundTitle, note: state.roundNote,
+      classMode: state.classMode, classGroups: state.classGroups
+    });
+    newRoundSetup = '';
+    // Camera starts after a server-confirmed round snapshot is received.
+  } catch (error) {
+    console.error('Shared QR round start failed:', error);
+    alert('チェック回を開始できませんでした。通信と権限を確認してください。');
+  } finally {
+    roundActionPending = false;
+    render();
+  }
 });
 
 els.cameraBtn.addEventListener('click', async () => {
@@ -466,33 +508,48 @@ els.cameraBtn.addEventListener('click', async () => {
 });
 
 els.endBtn.addEventListener('click', async () => {
-  if (!confirm('今回のチェックを終了しますか？')) return;
-  state.status = 'ended';
-  state.endedAt = new Date().toISOString();
-  cameraPaused = false;
-  saveState();
+  if (!sharedReady || !groupSync || !confirm('全端末のチェック回を終了しますか？')) return;
+  roundActionPending = true;
   render();
-  await stopScanner();
+  try {
+    await groupSync.setStatus(state.roundId, 'ended');
+  } catch (error) {
+    console.error('Shared QR round end failed:', error);
+    alert('チェック回を終了できませんでした。');
+  } finally {
+    roundActionPending = false;
+    render();
+  }
 });
 
+document.getElementById('resumeBtn')?.addEventListener('click', async () => {
+  if (!sharedReady || !groupSync || state.status !== 'ended') return;
+  try {
+    await groupSync.setStatus(state.roundId, 'active');
+  } catch (error) {
+    console.error('Shared QR round resume failed:', error);
+    alert('チェック回を再開できませんでした。');
+  }
+});
+
+const memberAdminLink = document.getElementById('memberAdminLink');
+if (memberAdminLink && window.QRAccess?.role === 'admin') {
+  memberAdminLink.hidden = false;
+  memberAdminLink.href = './members.html?trip=' + encodeURIComponent(window.QRAccess.tripId);
+}
+
 els.newRoundBtn.addEventListener('click', () => {
-  state.status = 'idle';
-  state.startedAt = null;
-  state.endedAt = null;
+  if (!sharedReady || state.status !== 'ended') return;
+  newRoundSetup = state.roundId;
+  state.status = 'idle'; // Setup screen only; server round remains ended until new start ACK.
   state.checks = [];
   cameraPaused = false;
-  saveState();
   render();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
 els.resetBtn.addEventListener('click', () => {
-  if (!confirm('設定と今回のチェック記録をすべて消去しますか？')) return;
-  state = defaultState();
-  cameraPaused = false;
-  saveState();
-  render();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  alert('共有済みのチェック記録は各端末から削除できません。新しいチェック回を開始してください。');
 });
 
 els.manualAddBtn.addEventListener('click', () => {
@@ -524,7 +581,83 @@ window.addEventListener('pagehide', () => { stopScanner(); });
 window.addEventListener('beforeunload', () => { stopScanner(); });
 
 render();
-if (state.status === 'active') {
-  cameraPaused = true;
+els.startBtn.disabled = true;
+const syncStatus = document.getElementById('sharedSyncStatus');
+function setSharedStatus(message, isError = false) {
+  if (!syncStatus) return;
+  syncStatus.textContent = message;
+  syncStatus.style.color = isError ? '#b91c1c' : '';
+}
+function invalidateSharedView(message) {
+  sharedReady = false;
+  state.checks = [];
+  els.resultOverlay.classList.remove('show');
+  setSharedStatus(message, true);
   render();
 }
+function endAccess() {
+  accessEnded = true;
+  viewRevision += 1;
+  groupSync?.dispose();
+  state = defaultState();
+  invalidateSharedView('参加権限を確認してください。');
+  stopScanner();
+}
+window.addEventListener('qr-access-ended', endAccess);
+window.addEventListener('offline', () => invalidateSharedView('オフラインです。チェック操作はできません。'));
+(async () => {
+  try {
+    groupSync = await window.QRGroupSync.connect(window.QRAccess, async snapshot => {
+      if (accessEnded) return;
+      const thisView = ++viewRevision;
+      if (!snapshot.confirmed) {
+        invalidateSharedView('同期確認中。チェック操作はできません。');
+        return;
+      }
+      sharedReady = true;
+      if (newRoundSetup === snapshot.roundId && snapshot.round?.status === 'ended') {
+        setSharedStatus('次のチェック回を設定してください。');
+        render();
+        return;
+      }
+      newRoundSetup = '';
+      const previous = state.status;
+      const previousId = state.roundId;
+      const round = snapshot.round;
+      state = round ? {
+        status: round.status === 'active' ? 'active' : 'ended',
+        classMode: round.classMode === 'numeric' ? 'numeric' : 'alpha',
+        classGroups: sanitizeGroups(round.classGroups),
+        roundTitle: String(round.title || ''),
+        roundNote: String(round.note || ''),
+        startedAt: round.createdAt?.toDate?.().toISOString() || null,
+        endedAt: round.endedAt?.toDate?.().toISOString() || null,
+        roundId: snapshot.roundId,
+        checks: snapshot.checks
+      } : defaultState();
+      setSharedStatus('端末間同期中（サーバー確認済み）');
+      render();
+      if (previous === 'active' && (state.status !== 'active' || previousId !== state.roundId)) {
+        await stopScanner();
+      }
+      if (thisView !== viewRevision || accessEnded) return;
+      if (state.status === 'active' && (previous !== 'active' || previousId !== state.roundId)) {
+        cameraPaused = false;
+        await startScanner();
+      }
+    }, error => {
+      if (accessEnded) return;
+      console.error('Shared QR subscription failed:', error);
+      viewRevision += 1;
+      state = defaultState();
+      invalidateSharedView('同期できません。通信と参加権限を確認してください。');
+      stopScanner();
+    });
+    if (accessEnded) groupSync.dispose();
+    render();
+  } catch (error) {
+    console.error('Shared QR initialization failed:', error);
+    invalidateSharedView('共有チェックを開始できません。');
+  }
+})();
+window.addEventListener('pagehide', () => groupSync?.dispose());
