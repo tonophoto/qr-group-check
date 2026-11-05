@@ -23,6 +23,19 @@
     const members = fs.collection(db, ...root, 'members');
     const requests = fs.collection(db, ...root, 'joinRequests');
     const stops = [];
+    let disposed = false;
+    const active = () => !disposed && window.QRAccess === access;
+    const requireActive = () => {
+      if (!active() || !navigator.onLine) throw new Error('qr-member-access-unavailable');
+    };
+    const dispose = () => {
+      disposed = true;
+      stops.forEach(stop => stop());
+      requestList.replaceChildren();
+      memberList.replaceChildren();
+      message('参加権限を確認してください。', true);
+    };
+    window.addEventListener('qr-access-ended', dispose, { once: true });
     function row(info, content) {
       const div = document.createElement('div');
       div.className = 'row';
@@ -47,6 +60,7 @@
       return select;
     }
     stops.push(fs.onSnapshot(requests, { includeMetadataChanges: true }, snap => {
+      if (!active()) return;
       requestList.replaceChildren();
       if (snap.metadata.fromCache || snap.metadata.hasPendingWrites) {
         requestList.textContent = 'サーバー確認中です。操作できません。';
@@ -63,6 +77,7 @@
           approve.addEventListener('click', async () => {
             approve.disabled = true;
             try {
+              requireActive();
               const batch = fs.writeBatch(db);
               batch.set(fs.doc(db, ...root, 'members', item.id), {
                 role: role.value, displayName: String(request.displayName || request.email || ''),
@@ -70,19 +85,34 @@
               });
               batch.delete(item.ref);
               await batch.commit();
-              message('参加者を承認しました。');
+              if (active()) message('参加者を承認しました。');
             } catch (error) {
               console.error('QR member approval failed:', error);
               message('承認に失敗しました。通信と権限を確認してください。', true);
               approve.disabled = false;
             }
           });
-          actions.append(role, approve);
+          const reject = document.createElement('button');
+          reject.type = 'button';
+          reject.textContent = '拒否';
+          reject.addEventListener('click', async () => {
+            reject.disabled = true;
+            try {
+              requireActive();
+              await fs.deleteDoc(item.ref);
+              if (active()) message('参加申請を拒否しました。');
+            } catch {
+              if (active()) message('参加申請を拒否できませんでした。', true);
+              reject.disabled = false;
+            }
+          });
+          actions.append(role, approve, reject);
         }));
       });
       message('参加申請を同期しています。');
-    }, error => { console.error(error); message('参加申請を取得できません。', true); }));
+    }, error => { if (!active()) return; requestList.replaceChildren(); console.error(error); message('参加申請を取得できません。', true); }));
     stops.push(fs.onSnapshot(members, { includeMetadataChanges: true }, snap => {
+      if (!active()) return;
       memberList.replaceChildren();
       if (snap.metadata.fromCache || snap.metadata.hasPendingWrites) {
         memberList.textContent = 'サーバー確認中です。操作できません。';
@@ -107,11 +137,12 @@
           save.addEventListener('click', async () => {
             save.disabled = true;
             try {
+              requireActive();
               await fs.setDoc(item.ref, {
                 role: role.value, displayName: String(member.displayName || ''),
                 email: String(member.email || ''), disabled: disabled.checked
               });
-              message('参加者情報を更新しました。');
+              if (active()) message('参加者情報を更新しました。');
             } catch (error) {
               console.error('QR member update failed:', error);
               message('更新できませんでした。', true);
@@ -120,8 +151,8 @@
           actions.append(role, label, save);
         }));
       });
-    }, error => { console.error(error); message('参加者一覧を取得できません。', true); }));
-    window.addEventListener('pagehide', () => stops.forEach(stop => stop()), { once: true });
+    }, error => { if (!active()) return; memberList.replaceChildren(); console.error(error); message('参加者一覧を取得できません。', true); }));
+    window.addEventListener('pagehide', dispose, { once: true });
   } catch (error) {
     console.error('QR member administration failed:', error);
     message('参加者管理を初期化できませんでした。', true);

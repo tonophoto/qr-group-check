@@ -1,6 +1,6 @@
 # QR班チェック・端末間同期と将来antidisc連携のデータ契約
 
-Status: **Draft / NOT RELEASE APPROVED** (2026-11-03)
+Status: **Draft / NOT RELEASE APPROVED** (2026-11-05)
 
 ## 今回の最小実装
 
@@ -71,7 +71,8 @@ qrTrips/{qrTripId}/groupRounds/{roundId}/checks/{groupCode}
 
 ## 制限・残課題
 
-- ソースの静的チェックのみでブラウザ・Emulator・複数実機テストは未実施。
+- Auth/Firestore Emulator、独立A/Bクライアント、許可済みローカルChromiumで検証済み。実機2台・実Googleログイン・実カメラ読取は未検証。[検証記録](pr-11-local-verification-2026-11-05.md)参照。
+- QR専用Rules候補は `verification/firestore.qr-only.rules`。本番への適用は行っていない。
 - `admin`による参加者承認は QR 専用画面を提供するだけで、管理者アカウントの初期セットアップは行わない。
 - チェック回の終了や次の開始は共有操作。意図せぬ同時操作をUIで完全に防ぐには実機検証が必要。
 - オフラインでは記録不可。データの同期が確定するまで「チェック済み」と見なさない。

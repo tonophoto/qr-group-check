@@ -1,6 +1,6 @@
 // Produce a strict allowlist of files for the QR-only Hosting site.
 // Never deploy the repository root: old versions contained .git artifacts.
-import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, lstatSync, realpathSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
@@ -11,11 +11,14 @@ const allow = [
   'style.css', 'group-audio-fix.js', 'group-effects.js',
   'photography-effects.js', 'photography-effects.css'
 ];
+if (existsSync(out) && (lstatSync(out).isSymbolicLink() || realpathSync(out) !== out)) {
+  throw new Error('QR output must be a real directory inside this repository');
+}
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
 for (const file of allow) {
   const input = join(root, file);
-  if (!existsSync(input) || !statSync(input).isFile()) throw new Error('QR allowlist source missing: ' + file);
+  if (!existsSync(input) || !lstatSync(input).isFile()) throw new Error('QR allowlist source missing: ' + file);
   cpSync(input, join(out, file));
 }
 const actual = readdirSync(out).sort();

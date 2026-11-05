@@ -1,0 +1,5 @@
+dist-qr/
+.local-verify/
+node_modules/
+firebase-debug.log
+*-debug.log

@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "build:qr": "node scripts/build-qr-public.mjs",
-    "test:qr:static": "node --test scripts/qr-public-and-sync.test.mjs"
+    "test:qr:static": "node --test scripts/qr-public-and-sync.test.mjs",
+    "test:qr:runtime": "node --test scripts/qr-sync-runtime.test.mjs",
+    "test:qr:emulator": "node scripts/run-qr-local-verification.mjs"
   }
 }
